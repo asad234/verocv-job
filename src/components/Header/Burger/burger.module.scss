@@ -1,0 +1,97 @@
+.button {
+  width: 150px;  // Default width
+  height: 40px;  // Default height
+  background-color: gray;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: fixed;
+  right: 0;
+  top: 0;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 9999; /* Ensure it's on top of other elements */
+
+  p {
+      display: none;
+      color: white;
+      margin: 0;
+      text-transform: uppercase;
+      transition: color 0.5s;
+      font-size: 12px; /* Adjust font size for mobile */
+      letter-spacing: 1px; /* Slight letter-spacing for better readability */
+  }
+
+  svg {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+
+      line {
+          transition: stroke 0.5s;
+      }
+  }
+
+  .background {
+      background-color: #2563eb;
+      width: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: -1;
+      height: 0;
+      transition: height 0.3s;
+  }
+
+  &:hover {
+      p {
+          display: block; /* Show the text on hover */
+          color: black;
+      }
+
+      svg {
+          line {
+              stroke: black;
+          }
+      }
+
+      .background {
+          height: 100%;
+      }
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .button {
+      width: 120px;  
+      height: 60px;  
+      padding: 8px;  
+
+      p {
+          font-size: 10px; 
+          display: block;
+      }
+
+      svg {
+          right: 10px;  
+          top: 8px;
+      }
+  }
+}
+
+@media only screen and (min-width: 600px) {
+  .button {
+      width: 150px;  
+      height: 120px;
+      padding: 15px; 
+      p {
+          font-size: 14px;
+          display: block;
+      }
+
+      svg {
+          right: 20px; 
+          top: 20px;
+      }
+  }
+}

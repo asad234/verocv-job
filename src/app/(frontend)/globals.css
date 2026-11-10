@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: unset;
+    font-weight: unset;
+  }
+
+  :root {
+    --background: #ffffff; /* White */
+    --foreground: #253c78; /* Dark blue */
+
+    --card: #ffffff; /* Light cream */
+    --card-foreground: #253c78; /* Dark blue */
+
+    --popover: #ffffff; /* White */
+    --popover-foreground: #253c78; /* Dark blue */
+
+  /* Primary (Dark Navy) */
+    --primary: #051650;            /* Dark navy blue */
+    --primary-dark: #041244;       /* Darker navy for hover */
+    --primary-foreground: #ffffff;/* White text */
+
+    /* Secondary (Soft Blue) */
+    --secondary: #9CB1CA;          /* Soft blue */
+    --secondary-dark: #889DB6;     /* Hover / active */
+    --secondary-foreground: #051650; /* Navy text */
+
+    --muted: #3b82f617; /* Light cream */
+    --muted-foreground: #253c78; /* Dark blue */
+
+    --accent: #d36582; /* Pink accent */
+    --accent-foreground: #ffffff; /* White */
+
+    --destructive: #ff0000; /* Red */
+    --destructive-foreground: #ffffff; /* White */
+
+    --border: #ffffff; /* Light brown */
+    --input: #2b59c3; /* Light cream */
+    --ring: #2b59c3; /* Primary blue */
+
+    --radius: 0.2rem;
+
+    --success: #2b59c3; /* Primary blue */
+    --warning: #d36582; /* Pink accent */
+    --error: #ff0000; /* Red */
+  }
+
+  [data-theme='dark'] {
+    --background: #000000; /* Black */
+    --foreground: #ffffff; /* White */
+
+    --card: #253c78; /* Dark blue */
+    --card-foreground: #ffffff; /* White */
+
+    --popover: #253c78; /* Dark blue */
+    --popover-foreground: #ffffff; /* White */
+
+    --input: #253c78; /* Dark blue */
+  }
+}
+
+@layer utilities {
+  .border-border {
+    border-color: var(--border);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen flex flex-col;
+  }
+}
+
+html {
+  opacity: 1 !important;
+}
+
+html[data-theme='dark'],
+html[data-theme='light'] {
+  opacity: initial;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer-custom {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(141, 164, 196, 0.6),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+/* pdf viewer */
+@keyframes fade-out {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fade-out {
+  animation: fade-out 2s ease-in-out forwards;
+}
+
+/* Smooth transitions for iframe */
+iframe {
+  transition: opacity 0.3s ease;
+}
+
+iframe:not([src]), iframe[src=""] {
+  opacity: 0;
+}
+
+iframe[src] {
+  opacity: 1;
+}

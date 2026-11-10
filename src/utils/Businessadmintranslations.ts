@@ -1,0 +1,628 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+
+/* ─────────────────────────────────────────────
+   TRANSLATION OBJECT
+   Mirrors the pattern of dashboardTranslations.ts
+───────────────────────────────────────────── */
+export const businessAdminTranslations = {
+  en: {
+    /* ── Navigation / Sidebar ── */
+    home: 'Home',
+    profile: 'Profile',
+    dashboard: 'Dashboard',
+    managers: 'Managers',
+    createManager: 'Create Manager',
+    managersList: 'Manage Managers',
+    employees: 'Employees',
+    availability: 'Manager Availability',
+    messages: 'Messages',
+    reports: 'Reports',
+    settings: 'Settings',
+    accountSettings: 'Account Settings',
+    helpSupport: 'Help & Support',
+    signOut: 'Sign Out',
+    collapse: 'Collapse',
+    expandSidebar: 'Expand Sidebar',
+    collapseSidebar: 'Collapse Sidebar',
+
+    /* ── Role badges ── */
+    businessAdmin: 'Business Admin',
+
+    /* ── Home page ── */
+    welcomeTitle: 'Business Admin Dashboard',
+    welcomeSubtitle: 'Manage your managers, track availability and communicate with your team.',
+    setupTitle: 'Admin Actions',
+    step1Title: 'Create a Manager Account',
+    step1Desc: 'Add a new manager and send them an invitation link.',
+    step2Title: 'Manage Managers',
+    step2Desc: 'View, edit, deactivate or remove manager accounts.',
+    step3Title: 'Manager Availability',
+    step3Desc: 'See when managers are free and plan assignments.',
+    step4Title: 'Message Managers',
+    step4Desc: 'Chat directly with any manager in your organisation.',
+    completionMessage: 'Use the sidebar or click any action above to navigate.',
+    orgTitle: 'Organisation Overview',
+
+    /* ── Create Manager form ── */
+    createManagerTitle: 'Create Manager Account',
+    createManagerDesc: 'Add a new Manager who can oversee employees and handle CV creation.',
+    firstNameLabel: 'First name',
+    lastNameLabel: 'Last name',
+    emailLabel: 'Work email',
+    phoneLabel: 'Phone number',
+    departmentLabel: 'Department',
+    departmentPlaceholder: 'e.g. IT, Marketing, Sales',
+    accessLevelLabel: 'Access level',
+    accessOptions: ['Full Access', 'CV & Employees only', 'Read only'],
+    sendInviteToggle: 'Send invitation by email',
+    noteLabel: 'Additional note (optional)',
+    notePlaceholder: 'Internal notes about this manager…',
+    submitCreateManager: 'Create Manager Account',
+    successTitle: 'Manager account created!',
+    successDesc: 'An invitation has been sent to the email address provided.',
+    createAnother: 'Create another',
+
+    /* ── Managers list ── */
+    managersListTitle: 'Manage Managers',
+    managersListDesc: 'View, edit and manage all manager accounts in your organisation.',
+    searchManagers: 'Search managers…',
+    allStatuses: 'All statuses',
+    active: 'Active',
+    inactive: 'Inactive',
+    pending: 'Pending',
+    department: 'Department',
+    access: 'Access',
+    employeesLabel: 'Employees',
+    joinedLabel: 'Joined',
+    editBtn: 'Edit',
+    deactivateBtn: 'Deactivate',
+    activateBtn: 'Activate',
+    removeBtn: 'Remove',
+    chatBtn: 'Message',
+    confirmDeactivate: 'Deactivate this manager?',
+    confirmRemove: 'Remove this manager permanently?',
+    cancelBtn: 'Cancel',
+    confirmBtn: 'Confirm',
+    totalManagers: 'Total managers',
+
+    /* ── Managers → Contracts ── */
+    managerContracts: 'Contracts',
+
+    /* ── Others → Interviews ── */
+    others: 'Others',
+    chats: 'Chats',
+    interviews: 'Interviews',
+    managerInterviewsTitle: 'Interview managers.',
+    managerInterviewsDesc:
+      'Book interviews with managers you want to hire — with Google Calendar and Meet, notes and evaluation. The manager sees it in their own Interviews calendar.',
+
+    managerContractsTitle: 'Contracts for managers.',
+    managerContractsDesc:
+      'Write and send employment contracts to managers you hire. They sign under Others → My contracts, then you counter-sign here.',
+
+    /* ── Manager Availability ── */
+    availabilityTitle: 'Manager Availability',
+    availabilityDesc: 'Track when your managers are free and plan workloads accordingly.',
+    thisWeek: 'This week',
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    availableFrom: 'Free from',
+    noteField: 'Note',
+    legend: 'Legend',
+    messageBtn: 'Message',
+    filterAll: 'All',
+
+    /* ── Messages / Chat ── */
+    messagesTitle: 'Messages',
+    messagesDesc: 'Communicate directly with your managers.',
+    searchManagers2: 'Search managers…',
+    typeMessage: 'Type a message…',
+    sendBtn: 'Send',
+    online: 'Online',
+    away: 'Away',
+    offline: 'Offline',
+    noMessages: 'No messages yet. Start the conversation!',
+    selectManager: 'Select a manager to start messaging.',
+
+    /* ── Employees (read-only) ── */
+    employeesTitle: 'Employees',
+    employeesDesc: 'Read-only view of all employees grouped by their manager.',
+    searchEmployees: 'Search employees…',
+    allManagers: 'All managers',
+    allStatusesFilter: 'All statuses',
+    groupedBy: 'Grouped by manager',
+    managedBy: 'Managed by',
+    cvsLabel: 'CVs',
+    portfolioLabel: 'Portfolio',
+    placed: 'Placed',
+    viewCVs: 'View CVs',
+    viewPortfolio: 'View Portfolio',
+    noCV: 'No CVs for this employee.',
+    noPortfolio: 'No portfolio items.',
+    skillsLabel: 'skills',
+    jobsLabel: 'jobs',
+    updatedLabel: 'Updated',
+    totalEmployees: 'Total employees',
+    placedLabel: 'Placed in jobs',
+    readOnlyNotice: 'Read only — admin can view but not edit employee data.',
+    closeBtn: 'Close',
+
+    /* ── Reports ── */
+    reportsTitle: 'Reports',
+    reportsDesc:
+      'Performance overview — managers, employee placements and CV activity across the organisation.',
+    periodLabel: 'Period',
+    periods: ['This week', 'This month', 'Last 3 months', 'This year'],
+    exportCSV: 'Export CSV',
+    exportPDF: 'Export PDF',
+    totalManagersStat: 'Total managers',
+    activeManagersStat: 'Active managers',
+    totalEmployeesStat: 'Total employees',
+    totalPlacedStat: 'Total placed',
+    totalCVsStat: 'CVs created',
+    managerPerformance: 'Manager Performance',
+    managerCol: 'Manager',
+    departmentCol: 'Department',
+    managedCol: 'Employees',
+    activeCol: 'Active',
+    placedCol: 'Placed',
+    placementRate: 'Placement %',
+    cvCreatedCol: 'CVs Created',
+    performanceCol: 'Performance',
+    excellent: 'Excellent',
+    good: 'Good',
+    average: 'Average',
+    low: 'Low',
+    selectManagerPrompt: 'Click a manager row to see their employee breakdown.',
+    employeeBreakdown: 'Employee Breakdown',
+    employeeCol: 'Employee',
+    titleCol: 'Title',
+    statusCol: 'Status',
+    jobPlacedCol: 'Placed',
+    cvCountCol: 'CVs',
+    portfolioCol: 'Portfolio',
+    placementChart: 'Placements by Manager',
+    cvChart: 'CVs Created by Manager',
+    performanceScale: 'Performance Scale',
+
+    /* ── Feature Request ── */
+    featureRequestTitle: 'Request a Feature',
+    featureRequestDesc: 'Help us improve by suggesting new features or improvements.',
+    featureNameLabel: 'Feature Name',
+    featureNameHelp: 'Give your feature request a clear, descriptive name.',
+    featureNamePlaceholder: 'e.g. Dark mode for dashboard',
+    featureDescriptionLabel: 'Feature Description',
+    featureDescriptionHelp: 'Describe the feature in detail and explain why it would be useful.',
+    featureDescriptionPlaceholder: "Describe the feature you'd like to see…",
+    experienceRatingLabel: 'Overall Experience Rating',
+    experienceRatingHelp: 'How would you rate your overall experience with our platform?',
+    selectRatingOption: 'Select a rating',
+    ratingPoor: 'Poor',
+    ratingFair: 'Fair',
+    ratingGood: 'Good',
+    ratingVeryGood: 'Very Good',
+    ratingExcellent: 'Excellent',
+    contactInfoLabel: 'Contact Information (Optional)',
+    contactInfoHelp: "Leave your email if you'd like us to follow up on this request.",
+    contactInfoPlaceholder: 'your.email@example.com',
+    submittingButton: 'Submitting…',
+    submitButton: 'Submit Request',
+    featureRequestSuccess: 'Feature request submitted successfully!',
+    featureRequestError: 'Failed to submit feature request.',
+    featureRequestErrorHelp: 'Please try again or contact support.',
+
+    /* ── Settings — General tab ── */
+    settingsTitle: 'Business Admin Settings',
+    settingsSubtitle: 'Manage your company account, team access and security preferences.',
+    tabGeneral: 'General',
+    tabCompany: 'Company',
+    tabNotifications: 'Notifications',
+    tabSecurity: 'Security',
+    personalInfo: 'Personal Information',
+    firstName: 'First name',
+    lastName: 'Last name',
+    email: 'Email address',
+    phone: 'Phone number',
+    jobTitle: 'Job title',
+    jobTitlePlaceholder: 'e.g. CEO, Managing Director',
+    saveChanges: 'Save Changes',
+
+    /* ── Settings — Company tab ── */
+    companyLogo: 'Company Logo',
+    logoDesc:
+      'This logo is shared across all company accounts and visible to all managers and employees.',
+    uploadLogo: 'Upload logo',
+    removeLogo: 'Remove logo',
+    logoHint: 'PNG, SVG or JPG · Max 2 MB',
+    companyInfo: 'Company Information',
+    companyNameLabel: 'Company name',
+    companyNamePlaceholder: 'e.g. Nordic Konsult AB',
+    orgNumberLabel: 'Organisation number',
+    orgNumberPlaceholder: 'e.g. 556123-4567',
+    industryLabel: 'Industry',
+    industries: [
+      'Staffing & Consulting',
+      'IT & Tech',
+      'Finance',
+      'Healthcare',
+      'Construction',
+      'Other',
+    ],
+    companySizeLabel: 'Company size',
+    companySizes: ['1–10', '11–50', '51–200', '201–500', '500+'],
+    companyEmailLabel: 'Company email',
+    companyEmailPlaceholder: 'info@company.se',
+    companyPhoneLabel: 'Company phone',
+    companyPhonePlaceholder: '+46 8 000 00 00',
+    companyWebsiteLabel: 'Website',
+    companyWebsitePlaceholder: 'www.company.se',
+    companyAddressLabel: 'Registered address',
+    companyAddressPlaceholder: 'Storgatan 1, 111 23 Stockholm',
+    saveCompany: 'Save Company Info',
+
+    /* ── Settings — Notifications tab ── */
+    notifTitle: 'Notification Preferences',
+    emailNotif: 'Email notifications',
+    emailNotifDesc: 'Receive summaries and alerts via email.',
+    newManagerNotif: 'New manager joined',
+    newManagerNotifDesc: 'Get notified when a new manager accepts their invitation.',
+    placementAlert: 'Placement alerts',
+    placementAlertDesc: 'Be notified when a manager reports a successful placement.',
+    weeklyReport: 'Weekly report',
+    weeklyReportDesc: 'Receive a weekly digest of team activity and placements.',
+    saveNotif: 'Save Preferences',
+
+    /* ── Settings — Security tab ── */
+    securityTitle: 'Security',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    confirmPassword: 'Confirm new password',
+    passwordHint: 'Minimum 8 characters, include a number and a symbol.',
+    twoFactor: 'Two-factor authentication',
+    twoFactorDesc: 'Add an extra layer of security to your account.',
+    twoFactorEnabled: 'Enabled',
+    twoFactorDisabled: 'Disabled',
+    savePassword: 'Update Password',
+    passwordMismatch: 'Passwords do not match.',
+    passwordTooShort: 'Password must be at least 8 characters.',
+    passwordSaved: 'Password updated successfully.',
+
+    /* ── Toast / status messages ── */
+    saving: 'Saving…',
+    saved: 'Saved!',
+    failedToSave: 'Failed to save.',
+    required: 'This field is required',
+    invalidEmail: 'Enter a valid email address',
+
+    passwordLabel: 'Password',
+    confirmPasswordLabel: 'Confirm password',
+  },
+
+  sv: {
+    /* ── Navigation / Sidebar ── */
+    home: 'Hem',
+    profile: 'Profil',
+    dashboard: 'Dashboard',
+    managers: 'Chefer',
+    createManager: 'Skapa chef',
+    managersList: 'Hantera chefer',
+    employees: 'Medarbetare',
+    availability: 'Chefernas tillgänglighet',
+    messages: 'Meddelanden',
+    reports: 'Rapporter',
+    settings: 'Inställningar',
+    accountSettings: 'Kontoinställningar',
+    helpSupport: 'Hjälp & Support',
+    signOut: 'Logga ut',
+    collapse: 'Minimera',
+    expandSidebar: 'Expandera sidopanel',
+    collapseSidebar: 'Minimera sidopanel',
+
+    businessAdmin: 'Företagsadmin',
+
+    welcomeTitle: 'Företagsadmin-dashboard',
+    welcomeSubtitle: 'Hantera dina chefer, följ tillgänglighet och kommunicera med ditt team.',
+    setupTitle: 'Adminåtgärder',
+    step1Title: 'Skapa chefskonto',
+    step1Desc: 'Lägg till en ny chef och skicka en inbjudan.',
+    step2Title: 'Hantera chefer',
+    step2Desc: 'Visa, redigera, inaktivera eller ta bort chefskonton.',
+    step3Title: 'Chefernas tillgänglighet',
+    step3Desc: 'Se när chefer är lediga och planera uppdrag.',
+    step4Title: 'Meddelanden till chefer',
+    step4Desc: 'Chatta direkt med valfri chef i din organisation.',
+    completionMessage: 'Använd sidopanelen eller klicka på en åtgärd ovan för att navigera.',
+    orgTitle: 'Organisationsöversikt',
+
+    createManagerTitle: 'Skapa chefskonto',
+    createManagerDesc: 'Lägg till en ny chef som kan hantera medarbetare och CV-skapande.',
+    firstNameLabel: 'Förnamn',
+    lastNameLabel: 'Efternamn',
+    emailLabel: 'Jobbmail',
+    phoneLabel: 'Telefonnummer',
+    departmentLabel: 'Avdelning',
+    departmentPlaceholder: 't.ex. IT, Marknadsföring, Försäljning',
+    accessLevelLabel: 'Åtkomstnivå',
+    accessOptions: ['Full åtkomst', 'Endast CV & medarbetare', 'Skrivskyddad'],
+    sendInviteToggle: 'Skicka inbjudan via e-post',
+    noteLabel: 'Anteckning (valfritt)',
+    notePlaceholder: 'Intern notering om denna chef…',
+    submitCreateManager: 'Skapa chefskonto',
+    successTitle: 'Chefskonto skapat!',
+    successDesc: 'En inbjudan har skickats till den angivna e-postadressen.',
+    createAnother: 'Skapa ett till',
+
+    managersListTitle: 'Hantera chefer',
+    managersListDesc: 'Visa, redigera och hantera alla chefskonton i din organisation.',
+    searchManagers: 'Sök chefer…',
+    allStatuses: 'Alla statusar',
+    active: 'Aktiv',
+    inactive: 'Inaktiv',
+    pending: 'Väntande',
+    department: 'Avdelning',
+    access: 'Åtkomst',
+    employeesLabel: 'Medarbetare',
+    joinedLabel: 'Anslöt',
+    editBtn: 'Redigera',
+    deactivateBtn: 'Inaktivera',
+    activateBtn: 'Aktivera',
+    removeBtn: 'Ta bort',
+    chatBtn: 'Meddelande',
+    confirmDeactivate: 'Inaktivera den här chefen?',
+    confirmRemove: 'Ta bort den här chefen permanent?',
+    cancelBtn: 'Avbryt',
+    confirmBtn: 'Bekräfta',
+    totalManagers: 'Totalt chefer',
+
+    /* ── Chefer → Kontrakt ── */
+    managerContracts: 'Kontrakt',
+
+    /* ── Övrigt → Intervjuer ── */
+    others: 'Övrigt',
+    chats: 'Chattar',
+    interviews: 'Intervjuer',
+    managerInterviewsTitle: 'Intervjua chefer.',
+    managerInterviewsDesc:
+      'Boka intervjuer med chefer du vill anställa — med Google Kalender och Meet, anteckningar och utvärdering. Chefen ser intervjun i sin egen intervjukalender.',
+
+    managerContractsTitle: 'Kontrakt för chefer.',
+    managerContractsDesc:
+      'Skriv och skicka anställningsavtal till chefer du anställer. De signerar under Övrigt → Mina kontrakt, sedan signerar du här.',
+
+    availabilityTitle: 'Chefernas tillgänglighet',
+    availabilityDesc: 'Se när dina chefer är lediga och planera arbetsbelastningen.',
+    thisWeek: 'Denna vecka',
+    days: ['Mån', 'Tis', 'Ons', 'Tor', 'Fre'],
+    availableFrom: 'Ledig från',
+    noteField: 'Notering',
+    legend: 'Förklaring',
+    messageBtn: 'Meddelande',
+    filterAll: 'Alla',
+
+    messagesTitle: 'Meddelanden',
+    messagesDesc: 'Kommunicera direkt med dina chefer.',
+    searchManagers2: 'Sök chefer…',
+    typeMessage: 'Skriv ett meddelande…',
+    sendBtn: 'Skicka',
+    online: 'Online',
+    away: 'Borta',
+    offline: 'Offline',
+    noMessages: 'Inga meddelanden ännu. Starta konversationen!',
+    selectManager: 'Välj en chef för att börja meddela.',
+
+    employeesTitle: 'Medarbetare',
+    employeesDesc: 'Skrivskyddad vy över alla medarbetare grupperade per chef.',
+    searchEmployees: 'Sök medarbetare…',
+    allManagers: 'Alla chefer',
+    allStatusesFilter: 'Alla statusar',
+    groupedBy: 'Grupperade per chef',
+    managedBy: 'Hanteras av',
+    cvsLabel: 'CV:n',
+    portfolioLabel: 'Portfolio',
+    placed: 'Placerad',
+    viewCVs: 'Visa CV:n',
+    viewPortfolio: 'Visa portfolio',
+    noCV: 'Inga CV:n för denna medarbetare.',
+    noPortfolio: 'Inga portfolioposter.',
+    skillsLabel: 'kompetenser',
+    jobsLabel: 'jobb',
+    updatedLabel: 'Uppdaterat',
+    totalEmployees: 'Totalt medarbetare',
+    placedLabel: 'Placerade i jobb',
+    readOnlyNotice: 'Skrivskyddad — admin kan se men inte redigera medarbetardata.',
+    closeBtn: 'Stäng',
+
+    reportsTitle: 'Rapporter',
+    reportsDesc:
+      'Prestandaöversikt — chefer, medarbetarplaceringar och CV-aktivitet i organisationen.',
+    periodLabel: 'Period',
+    periods: ['Denna vecka', 'Denna månad', 'Senaste 3 månader', 'Detta år'],
+    exportCSV: 'Exportera CSV',
+    exportPDF: 'Exportera PDF',
+    totalManagersStat: 'Totalt chefer',
+    activeManagersStat: 'Aktiva chefer',
+    totalEmployeesStat: 'Totalt medarbetare',
+    totalPlacedStat: 'Totalt placerade',
+    totalCVsStat: 'Skapade CV:n',
+    managerPerformance: 'Chefsprestanda',
+    managerCol: 'Chef',
+    departmentCol: 'Avdelning',
+    managedCol: 'Medarbetare',
+    activeCol: 'Aktiva',
+    placedCol: 'Placerade',
+    placementRate: 'Placeringsgrad',
+    cvCreatedCol: 'Skapade CV:n',
+    performanceCol: 'Prestanda',
+    excellent: 'Utmärkt',
+    good: 'Bra',
+    average: 'Genomsnitt',
+    low: 'Låg',
+    selectManagerPrompt: 'Klicka på en chefrad för att se medarbetaruppdelningen.',
+    employeeBreakdown: 'Medarbetaruppdelning',
+    employeeCol: 'Medarbetare',
+    titleCol: 'Titel',
+    statusCol: 'Status',
+    jobPlacedCol: 'Placerad',
+    cvCountCol: 'CV:n',
+    portfolioCol: 'Portfolio',
+    placementChart: 'Placeringar per chef',
+    cvChart: 'Skapade CV:n per chef',
+    performanceScale: 'Prestanda-skala',
+
+    /* ── Feature Request ── */
+    featureRequestTitle: 'Begär en Funktion',
+    featureRequestDesc: 'Hjälp oss förbättra plattformen genom att föreslå nya funktioner.',
+    featureNameLabel: 'Funktionsnamn',
+    featureNameHelp: 'Ge din funktionsförfrågan ett tydligt, beskrivande namn.',
+    featureNamePlaceholder: 't.ex. Mörkt läge för dashboard',
+    featureDescriptionLabel: 'Funktionsbeskrivning',
+    featureDescriptionHelp:
+      'Beskriv funktionen i detalj och förklara varför den skulle vara användbar.',
+    featureDescriptionPlaceholder: 'Beskriv funktionen du skulle vilja se…',
+    experienceRatingLabel: 'Övergripande upplevelsebedömning',
+    experienceRatingHelp: 'Hur skulle du betygsätta din övergripande upplevelse av plattformen?',
+    selectRatingOption: 'Välj ett betyg',
+    ratingPoor: 'Dålig',
+    ratingFair: 'Okej',
+    ratingGood: 'Bra',
+    ratingVeryGood: 'Mycket bra',
+    ratingExcellent: 'Utmärkt',
+    contactInfoLabel: 'Kontaktinformation (valfritt)',
+    contactInfoHelp: 'Lämna din e-post om du vill att vi ska följa upp din förfrågan.',
+    contactInfoPlaceholder: 'din.email@exempel.se',
+    submittingButton: 'Skickar…',
+    submitButton: 'Skicka förfrågan',
+    featureRequestSuccess: 'Funktionsförfrågan skickad!',
+    featureRequestError: 'Misslyckades att skicka förfrågan.',
+    featureRequestErrorHelp: 'Försök igen eller kontakta support.',
+
+    settingsTitle: 'Företagsadmin-inställningar',
+    settingsSubtitle: 'Hantera ditt företagskonto, teamåtkomst och säkerhetsinställningar.',
+    tabGeneral: 'Allmänt',
+    tabCompany: 'Företag',
+    tabNotifications: 'Notifieringar',
+    tabSecurity: 'Säkerhet',
+    personalInfo: 'Personlig information',
+    firstName: 'Förnamn',
+    lastName: 'Efternamn',
+    email: 'E-postadress',
+    phone: 'Telefonnummer',
+    jobTitle: 'Jobbtitel',
+    jobTitlePlaceholder: 't.ex. VD, Verksamhetschef',
+    saveChanges: 'Spara ändringar',
+
+    companyLogo: 'Företagslogotyp',
+    logoDesc: 'Logotypen delas med alla företagskonton och syns för alla chefer och medarbetare.',
+    uploadLogo: 'Ladda upp logotyp',
+    removeLogo: 'Ta bort logotyp',
+    logoHint: 'PNG, SVG eller JPG · Max 2 MB',
+    companyInfo: 'Företagsinformation',
+    companyNameLabel: 'Företagsnamn',
+    companyNamePlaceholder: 't.ex. Nordic Konsult AB',
+    orgNumberLabel: 'Organisationsnummer',
+    orgNumberPlaceholder: 't.ex. 556123-4567',
+    industryLabel: 'Bransch',
+    industries: [
+      'Konsult & Bemanning',
+      'IT & Tech',
+      'Finans',
+      'Vård & Omsorg',
+      'Bygg & Industri',
+      'Annat',
+    ],
+    companySizeLabel: 'Företagsstorlek',
+    companySizes: ['1–10', '11–50', '51–200', '201–500', '500+'],
+    companyEmailLabel: 'Företagsmail',
+    companyEmailPlaceholder: 'info@foretaget.se',
+    companyPhoneLabel: 'Företagstelefon',
+    companyPhonePlaceholder: '+46 8 000 00 00',
+    companyWebsiteLabel: 'Webbplats',
+    companyWebsitePlaceholder: 'www.foretaget.se',
+    companyAddressLabel: 'Registrerad adress',
+    companyAddressPlaceholder: 'Storgatan 1, 111 23 Stockholm',
+    saveCompany: 'Spara företagsinfo',
+
+    notifTitle: 'Notifieringsinställningar',
+    emailNotif: 'E-postnotifieringar',
+    emailNotifDesc: 'Ta emot sammanfattningar och varningar via e-post.',
+    newManagerNotif: 'Ny chef anslöt',
+    newManagerNotifDesc: 'Meddelas när en ny chef accepterar sin inbjudan.',
+    placementAlert: 'Placeringsvarningar',
+    placementAlertDesc: 'Meddelas när en chef rapporterar en lyckad placering.',
+    weeklyReport: 'Veckorapport',
+    weeklyReportDesc: 'Ta emot en veckosammanfattning av teamaktivitet och placeringar.',
+    saveNotif: 'Spara inställningar',
+
+    securityTitle: 'Säkerhet',
+    currentPassword: 'Nuvarande lösenord',
+    newPassword: 'Nytt lösenord',
+    confirmPassword: 'Bekräfta nytt lösenord',
+    passwordHint: 'Minst 8 tecken, inkludera en siffra och ett specialtecken.',
+    twoFactor: 'Tvåfaktorsautentisering',
+    twoFactorDesc: 'Lägg till ett extra säkerhetslager för ditt konto.',
+    twoFactorEnabled: 'Aktiverad',
+    twoFactorDisabled: 'Inaktiverad',
+    savePassword: 'Uppdatera lösenord',
+    passwordMismatch: 'Lösenorden matchar inte.',
+    passwordTooShort: 'Lösenordet måste vara minst 8 tecken.',
+    passwordSaved: 'Lösenordet uppdaterades.',
+
+    saving: 'Sparar…',
+    saved: 'Sparat!',
+    failedToSave: 'Det gick inte att spara.',
+    required: 'Det här fältet är obligatoriskt',
+    invalidEmail: 'Ange en giltig e-postadress',
+
+    passwordLabel: 'Lösenord',
+    confirmPasswordLabel: 'Bekräfta lösenord',
+  },
+} as const
+
+export type BusinessAdminLanguage = 'en' | 'sv'
+export type BusinessAdminTranslations = (typeof businessAdminTranslations)['en']
+
+/* ─────────────────────────────────────────────
+   HOOK
+   Mirrors useDashboardTranslation exactly:
+   - reads from localStorage key "businessAdminLanguage"
+   - listens to a "businessAdminLanguageChanged" window event
+   - exposes language, setLanguage, t
+───────────────────────────────────────────── */
+export const useBusinessAdminTranslations = () => {
+  const [language, setLanguageState] = useState<BusinessAdminLanguage>('sv')
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  /* ── Initialise from localStorage ── */
+  useEffect(() => {
+    const saved = localStorage.getItem('businessAdminLanguage') as BusinessAdminLanguage | null
+    if (saved === 'en' || saved === 'sv') {
+      setLanguageState(saved)
+    }
+    setIsInitialized(true)
+  }, [])
+
+  /* ── Setter — persists + broadcasts ── */
+  const setLanguage = useCallback((lang: BusinessAdminLanguage) => {
+    setLanguageState(lang)
+    localStorage.setItem('businessAdminLanguage', lang)
+    window.dispatchEvent(new CustomEvent('businessAdminLanguageChanged', { detail: lang }))
+  }, [])
+
+  /* ── Listen for cross-component changes ── */
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      setLanguageState(e.detail as BusinessAdminLanguage)
+    }
+    window.addEventListener('businessAdminLanguageChanged', handler as EventListener)
+    return () =>
+      window.removeEventListener('businessAdminLanguageChanged', handler as EventListener)
+  }, [])
+
+  return {
+    language,
+    setLanguage,
+    t: businessAdminTranslations[language] as BusinessAdminTranslations,
+    isInitialized,
+  }
+}
