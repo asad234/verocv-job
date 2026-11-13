@@ -397,7 +397,7 @@ export default function ManagerInterviews() {
     if (page.kind === "reschedule" && rescheduling && rescheduling.status !== "scheduled") {
       go({ kind: "list", openId: rescheduling.id }, true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [page, rescheduling])
 
   const STATUS_TABS: (InterviewStatus | "all")[] = ["all", "scheduled", "completed", "cancelled", "no_show"]

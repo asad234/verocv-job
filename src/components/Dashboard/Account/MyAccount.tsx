@@ -481,7 +481,7 @@ const MyAccount = () => {
         },
       )
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [personalInfo, session?.user?.email])
 
   // Covers the case where there's no personal-information record yet at all
