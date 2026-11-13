@@ -61,7 +61,7 @@ export function ActingAsBanner({ language }: { language: Lang }) {
           {initials(name)}
         </div>
         <p className="flex-1 min-w-[200px] text-sm text-amber-900">
-          {isEn ? <>You're working in <b>{name}</b>'s workspace while covering for them.</>
+          {isEn ? <>You&apos;re working in <b>{name}</b>&apos;s workspace while covering for them.</>
             : <>Du arbetar i <b>{name}</b>s arbetsyta medan du täcker upp.</>}
           <span className="hidden sm:inline text-amber-700">
             {isEn ? " Changes you make are made for them." : " Ändringar du gör sker för deras räkning."}

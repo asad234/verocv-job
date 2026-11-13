@@ -559,7 +559,7 @@ const CompaniesPage: React.FC = () => {
               style={{ backgroundColor: "rgb(239,246,255)", borderColor: "rgb(191,219,254)" }}>
               {/* Large quote mark */}
               <div className="absolute -top-4 -left-2 text-9xl font-serif leading-none select-none pointer-events-none"
-                style={{ color: "rgb(191,219,254)" }}>"</div>
+                style={{ color: "rgb(191,219,254)" }}>&ldquo;</div>
 
               <blockquote className="relative z-10">
                 <p className="text-lg sm:text-xl text-slate-700 leading-relaxed italic mb-6 max-w-3xl">

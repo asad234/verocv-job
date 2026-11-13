@@ -286,7 +286,7 @@ export default function EmployeeProfileManagement() {
                 <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
                   <Icon icon="tabler:user-share" className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   {isEn
-                    ? <>{selected.employeeName || selected.employeeEmail} is on <b>{selected.coveringFor.name}</b>'s team. Changes you make here are saved for {selected.coveringFor.name}.</>
+                    ? <>{selected.employeeName || selected.employeeEmail} is on <b>{selected.coveringFor.name}</b>&apos;s team. Changes you make here are saved for {selected.coveringFor.name}.</>
                     : <>{selected.employeeName || selected.employeeEmail} tillhör <b>{selected.coveringFor.name}</b>s team. Ändringar du gör här sparas för {selected.coveringFor.name}.</>}
                 </div>
               )}

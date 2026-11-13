@@ -532,11 +532,10 @@ function WeekStrip({ isEn, selected, onSelect, interviews, now }: {
   const openPicker = () => {
     const el = dateInputRef.current as (HTMLInputElement & { showPicker?: () => void }) | null
     if (!el) return
-    try { el.showPicker ? el.showPicker() : el.click() } catch { el.click() }
+    try { if (el.showPicker) el.showPicker(); else el.click() } catch { el.click() }
   }
 
   const label = selected.toLocaleDateString(isEn ? "en-GB" : "sv-SE", { weekday: "short", day: "numeric", month: "short" })
-
   return (
     <div className="bg-white rounded-t-2xl border border-gray-200 px-4 sm:px-5 py-3 mb-2 flex items-center justify-between gap-3 flex-wrap">
       {/* Selected date + calendar picker */}

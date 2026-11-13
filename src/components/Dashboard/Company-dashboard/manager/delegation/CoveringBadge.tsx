@@ -54,7 +54,7 @@ export function CoveringNotice({ language }: { language: Lang | string }) {
       <Icon icon="tabler:user-share" className="w-4 h-4 flex-shrink-0 mt-0.5" />
       <span>
         {isEn
-          ? <>You're covering for <b>{names}</b> — their team is shown here too, marked with an amber badge.</>
+          ? <>You&apos;re covering for <b>{names}</b> — their team is shown here too, marked with an amber badge.</>
           : <>Du täcker upp för <b>{names}</b> — deras team visas också här, märkt med en gul etikett.</>}
       </span>
     </div>
