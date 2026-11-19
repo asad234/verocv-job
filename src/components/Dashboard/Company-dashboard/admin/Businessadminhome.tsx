@@ -10,7 +10,8 @@
 //   Right  • Key numbers  — managers, employees, active contracts, unread messages
 //          • This week    — your interviews + managers away
 //          • Latest messages (real chats)
-// API:            GET /api/company/admin/home · chats via utils/chat (chatApi)
+//   Top    • Company banner — your company logo (Settings → Company) + name, next to "To do"
+// API:            GET /api/company/admin/home · chats via utils/chat (chatApi) · logo via utils/adminProfile
 // ══════════════════════════════════════════════════════════════════════
 
 import type React from "react"
@@ -25,6 +26,7 @@ import type { AttentionItem, Kpi, ManagerReportRow } from "@/utils/adminReports"
 import type { AdminHomeData, AdminHomeInterview } from "@/utils/adminHome"
 // Same texts as the Reports page (your file is views/reportsTexts.ts)
 import { MY_CONTRACT_LABEL, REPORTS_TEXT, attentionCopy } from "./views/reportsTexts"
+import { useAdminProfile } from "@/utils/adminProfile"
 
 const NAVY = "rgb(5,22,80)"
 const LIGHT = "rgb(239,246,255)"
@@ -45,6 +47,8 @@ const HX = {
     todayWord: "Idag", tomorrow: "Imorgon", lastSeen: "Senast aktiv", never: "Aldrig inloggad",
     formats: { video: "Video", phone: "Telefon", in_person: "På plats" } as Record<string, string>,
     reports: "Rapporter",
+    addLogo: "Lägg till logotyp", changeLogo: "Byt logotyp", yourCompany: "Ditt företag",
+    logoHint: "Ladda upp företagets logotyp under Inställningar → Företag.",
   },
   en: {
     loadFailed: "Couldn't load the overview.", retry: "Try again",
@@ -60,6 +64,8 @@ const HX = {
     todayWord: "Today", tomorrow: "Tomorrow", lastSeen: "Last seen", never: "Never signed in",
     formats: { video: "Video", phone: "Phone", in_person: "In person" } as Record<string, string>,
     reports: "Reports",
+    addLogo: "Add logo", changeLogo: "Change logo", yourCompany: "Your company",
+    logoHint: "Upload your company logo in Settings → Company.",
   },
 }
 type Hx = (typeof HX)["sv"]
@@ -111,6 +117,7 @@ export default function BusinessAdminHome() {
   const hx = HX[lang]
   const rx = REPORTS_TEXT[lang]
   const unread = useChatUnread()
+  const profile = useAdminProfile() // company logo + name from Settings
 
   const [data, setData] = useState<AdminHomeData | null>(null)
   const [error, setError] = useState(false)
@@ -217,6 +224,15 @@ export default function BusinessAdminHome() {
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* ── LEFT 60% ── */}
           <div className="w-full lg:w-[60%] space-y-4 sm:space-y-6 min-w-0">
+            {/* Company banner — logo from Settings → Company */}
+            <CompanyBanner profile={profile} hx={hx} onEdit={() => {
+              // Open Settings straight on the Company tab
+              const url = new URL(window.location.href)
+              url.searchParams.set("settingsTab", "company")
+              window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`)
+              setView("account")
+            }} />
+
             {/* Get started — only until the first manager exists */}
             {noManagers && (
               <Card className="p-6">
@@ -391,6 +407,37 @@ export default function BusinessAdminHome() {
 }
 
 /* ═════════════════════════ Pieces ═════════════════════════ */
+
+function CompanyBanner({ profile, hx, onEdit }: { profile: ReturnType<typeof useAdminProfile>; hx: Hx; onEdit: () => void }) {
+  if (!profile) {
+    return <div className="h-[92px] rounded-2xl bg-white border border-gray-200 animate-pulse" />
+  }
+  const name = profile.companyName || hx.yourCompany
+  return (
+    <Card className="p-4 sm:p-5 flex items-center gap-4">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-gray-100 bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
+        {profile.logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.logo} alt={name} className="w-full h-full object-contain p-1.5" />
+        ) : (
+          <Icon icon="tabler:building" className="w-8 h-8 text-gray-300" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="text-lg sm:text-xl font-bold truncate" style={{ color: NAVY }}>{name}</h2>
+        {profile.logo ? (
+          profile.name && <p className="text-sm text-gray-500 truncate">{[profile.name, profile.jobTitle].filter(Boolean).join(" · ")}</p>
+        ) : (
+          <p className="text-sm text-gray-500">{hx.logoHint}</p>
+        )}
+      </div>
+      <button onClick={onEdit} className="text-xs font-medium px-3 py-1.5 rounded-lg flex-shrink-0 inline-flex items-center gap-1" style={{ color: NAVY, backgroundColor: LIGHT }}>
+        <Icon icon={profile.logo ? "tabler:pencil" : "tabler:upload"} className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">{profile.logo ? hx.changeLogo : hx.addLogo}</span>
+      </button>
+    </Card>
+  )
+}
 
 function newSub(k: Kpi, hx: Hx) {
   return k.value ? hx.newWeek(k.value) : ""

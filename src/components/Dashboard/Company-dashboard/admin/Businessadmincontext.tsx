@@ -7,14 +7,15 @@ export type BusinessAdminView =
   | "home"
   | "create_manager"
   | "managers_list"
-  | "manager_profile" // one manager's profile page (selectedManagerId)
-  | "manager_edit" // edit that manager (selectedManagerId)
-  | "manager_contracts" // Managers → Contracts (contracts you send to managers)
+  | "manager_profile"
+  | "manager_edit"
+  | "manager_contracts"
   | "availability"
-  | "chat" // Others → Chats (components/Chat/AdminChats)
-  | "interviews" // Others → Interviews (interview managers you want to hire)
+  | "chat" //
+  | "interviews"
   | "employees"
-  | "employee_profile" // one employee's page (selectedEmployeeId)
+  | "employee_profile"
+  | "organization"
   | "reports"
   | "account"
   | "help"

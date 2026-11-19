@@ -1,7 +1,6 @@
 "use client"
 // FILE LOCATION:  src/components/Dashboard/Company-dashboard/admin/Businessadminsidebar.tsx   (REPLACE)
-// CHANGE:         "Manager availability" moved into Managers (after Contracts), with a badge for
-//                 days-off requests waiting for your answer.
+// CHANGE:         New "Organisation" item (after Employees) → the company as a tree.
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
@@ -44,7 +43,7 @@ const BusinessAdminSidebar: React.FC<BusinessAdminSidebarProps> = ({
   currentView, onViewChange, unreadMessages,
 }) => {
   /* ── Single source of truth — reacts to businessAdminLanguageChanged event ── */
-  const { t } = useBusinessAdminTranslations()
+  const { t, language } = useBusinessAdminTranslations()
   // Unread chat messages (shared poll with the header icon). A prop still wins if you pass one.
   const chatUnread = useChatUnread()
   const unread = unreadMessages ?? chatUnread
@@ -74,6 +73,8 @@ const BusinessAdminSidebar: React.FC<BusinessAdminSidebarProps> = ({
       ],
     },
     { id: "employees", label: t.employees, icon: "tabler:user-circle", view: "employees" },
+    // Who works here and who leads whom — the company as a tree
+    { id: "organization", label: language === "en" ? "Organization" : "Organisation", icon: "tabler:sitemap", view: "organization" },
     { id: "feature_request", label: t.featureRequestTitle, icon: "tabler:bulb", view: "feature_request" },
     {
       // Others → Interviews, Reports, Chats (same as the manager sidebar)

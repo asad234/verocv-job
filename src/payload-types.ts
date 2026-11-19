@@ -562,6 +562,10 @@ export interface BusinessAdminInfo {
   email?: string | null;
   phone?: string | null;
   jobTitle?: string | null;
+  avatar?: {
+    uploadImage?: (number | null) | Media;
+    staticImage?: string | null;
+  };
   company?: {
     companyName?: string | null;
     orgNumber?: string | null;
@@ -603,6 +607,11 @@ export interface ManagerInfo {
   homeAddress?: string | null;
   gender?: ('male' | 'female') | null;
   professionalBio?: string | null;
+  avatar?: {
+    mode?: ('initials' | 'upload' | 'preset') | null;
+    uploadImage?: (number | null) | Media;
+    preset?: string | null;
+  };
   /**
    * Who to contact in case of an emergency involving this manager.
    */
@@ -1817,6 +1826,12 @@ export interface BusinessAdminInfoSelect<T extends boolean = true> {
   email?: T;
   phone?: T;
   jobTitle?: T;
+  avatar?:
+    | T
+    | {
+        uploadImage?: T;
+        staticImage?: T;
+      };
   company?:
     | T
     | {
@@ -1863,6 +1878,13 @@ export interface ManagerInfoSelect<T extends boolean = true> {
   homeAddress?: T;
   gender?: T;
   professionalBio?: T;
+  avatar?:
+    | T
+    | {
+        mode?: T;
+        uploadImage?: T;
+        preset?: T;
+      };
   emergencyContact?:
     | T
     | {

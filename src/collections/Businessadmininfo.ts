@@ -1,4 +1,6 @@
+// FILE LOCATION:  src/collections/BusinessAdminInfo.ts   (REPLACE) — new: avatar (profile photo)
 import type { CollectionConfig } from 'payload'
+import { validatePhoneField } from '@/utils/phone'
 
 const BusinessAdminInfo: CollectionConfig = {
   slug: 'business-admin-info',
@@ -36,11 +38,23 @@ const BusinessAdminInfo: CollectionConfig = {
       name: 'phone',
       label: 'Phone',
       type: 'text',
+      validate: validatePhoneField,
     },
     {
       name: 'jobTitle',
       label: 'Job Title',
       type: 'text',
+    },
+    // ── Profile photo (General tab) — saved by /api/company/admin/settings/avatar ──
+    // Shown in the dashboard header, and to the admin's managers.
+    {
+      name: 'avatar',
+      label: 'Profile Photo',
+      type: 'group',
+      fields: [
+        { name: 'uploadImage', label: 'Uploaded Photo', type: 'upload', relationTo: 'media' },
+        { name: 'staticImage', label: 'Photo URL', type: 'text' },
+      ],
     },
 
     // ── Company tab ──
@@ -78,6 +92,7 @@ const BusinessAdminInfo: CollectionConfig = {
           name: 'companyPhone',
           label: 'Company Phone',
           type: 'text',
+          validate: validatePhoneField,
         },
         {
           name: 'companyWebsite',

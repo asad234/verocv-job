@@ -8,6 +8,9 @@ import { useSession } from "next-auth/react"
 import { useManagerTranslations } from "@/utils/Managertranslations"
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm"
 import DelegationSettings from "@/components/Dashboard/Company-dashboard/manager/delegation/DelegationSettings"
+import PhoneInput from "@/components/shared/PhoneInput"
+import { isValidPhone, sanitizePhone } from "@/utils/phone"
+import { IMAGE_ACCEPT, imageProblem } from "@/utils/imageRules"
 
 /* ─── Constants ─── */
 const NAVY = "rgb(5,22,80)"
@@ -69,6 +72,17 @@ const saveManagerInfo = async (patch: Record<string, unknown>): Promise<any> => 
   return body.data
 }
 
+/* ─── Profile photo (saved on the server) ─── */
+type AvatarMode = "initials" | "upload" | "preset"
+interface AvatarState { mode: AvatarMode; preset: string | null; url: string | null }
+
+const avatarCall = async (init?: RequestInit): Promise<AvatarState> => {
+  const res = await fetch("/api/company/managers/settings/avatar", { cache: "no-store", ...init })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body?.message || "Failed")
+  return body.data as AvatarState
+}
+
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
@@ -83,10 +97,45 @@ const ManagerSettings: React.FC = () => {
   const [loading, setLoading] = useState(true)
 
   const avatarRef = useRef<HTMLInputElement>(null)
-  const [avatarMode, setAvatarMode] = useState<"initials" | "upload" | "preset">("initials")
+  const [avatarMode, setAvatarMode] = useState<AvatarMode>("initials")
   const [uploadedAvatar, setUploadedAvatar] = useState<string | null>(null)
   const [presetAvatar, setPresetAvatar] = useState<string | null>(null)
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  /** Phone fields refused on save → shown with a red border + pink background until edited. */
+  const [badPhones, setBadPhones] = useState<string[]>([])
+  const fixPhone = (key: string) => setBadPhones(b => b.filter(k => k !== key))
+
+  const applyAvatar = (a: AvatarState) => {
+    setAvatarMode(a.mode)
+    setUploadedAvatar(a.url)
+    setPresetAvatar(a.preset)
+  }
+
+  // Load the saved photo
+  useEffect(() => {
+    avatarCall().then(applyAvatar).catch(() => { /* keep initials */ })
+  }, [])
+
+  /** Saves a photo change; the toast says how it went. */
+  const changeAvatar = async (init: RequestInit) => {
+    setAvatarBusy(true)
+    show(isEn ? "Saving photo…" : "Sparar bild…", "loading")
+    try {
+      applyAvatar(await avatarCall(init))
+      show(isEn ? "Photo saved!" : "Bilden är sparad!", "success")
+    } catch (e) {
+      show((e as Error).message || (isEn ? "Couldn't save the photo." : "Kunde inte spara bilden."), "error")
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+  const choosePreset = (id: string) => {
+    setShowAvatarPicker(false)
+    changeAvatar({ method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "preset", preset: id }) })
+  }
+  const resetAvatar = () =>
+    changeAvatar({ method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "initials" }) })
 
   const PRESET_AVATARS = [
     { id: "a1", bg: "rgb(99,102,241)", initials: "👤" },
@@ -105,14 +154,14 @@ const ManagerSettings: React.FC = () => {
 
   const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = "" // so the same file can be picked again
     if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setUploadedAvatar(reader.result as string)
-      setAvatarMode("upload")
-      setShowAvatarPicker(false)
-    }
-    reader.readAsDataURL(file)
+    const problem = imageProblem(file, isEn)
+    if (problem) { show(problem, "error"); return }
+    setShowAvatarPicker(false)
+    const form = new FormData()
+    form.append("file", file)
+    changeAvatar({ method: "POST", body: form })
   }
 
   const currentAvatarContent = () => {
@@ -120,8 +169,8 @@ const ManagerSettings: React.FC = () => {
       return <img src={uploadedAvatar} alt="Avatar" className="w-full h-full object-cover rounded-2xl" />
     }
     if (avatarMode === "preset" && presetAvatar) {
-      const p = PRESET_AVATARS.find(a => a.id === presetAvatar)!
-      return <span className="text-2xl leading-none">{p.initials}</span>
+      const p = PRESET_AVATARS.find(a => a.id === presetAvatar)
+      if (p) return <span className="text-2xl leading-none">{p.initials}</span>
     }
     return <span className="text-xl font-bold text-white">{general.firstName[0]}{general.lastName[0]}</span>
   }
@@ -188,8 +237,8 @@ const ManagerSettings: React.FC = () => {
           lastName: data?.lastName || sessionLastName,
           email: data?.email || sessionEmail,
           privateEmail: data?.privateEmail ?? "",
-          phone: data?.phone ?? "",
-          mobilePhone: data?.mobilePhone ?? "",
+          phone: sanitizePhone(data?.phone ?? ""),
+          mobilePhone: sanitizePhone(data?.mobilePhone ?? ""),
           jobTitle: data?.jobTitle ?? "",
           homeAddress: data?.homeAddress ?? "",
           gender: data?.gender ?? "other",
@@ -206,7 +255,7 @@ const ManagerSettings: React.FC = () => {
           lastName: data.emergencyContact?.lastName ?? "",
           relationship: data.emergencyContact?.relationship ?? "",
           email: data.emergencyContact?.email ?? "",
-          phoneNumber: data.emergencyContact?.phoneNumber ?? "",
+          phoneNumber: sanitizePhone(data.emergencyContact?.phoneNumber ?? ""),
         })
         setDept({
           companyName: data.department?.companyName ?? "",
@@ -335,7 +384,7 @@ const ManagerSettings: React.FC = () => {
                       </div>
                       {/* Remove uploaded photo */}
                       {avatarMode === "upload" && uploadedAvatar && (
-                        <button onClick={() => { setUploadedAvatar(null); setAvatarMode("initials") }}
+                        <button onClick={resetAvatar} disabled={avatarBusy} aria-label={isEn ? "Remove photo" : "Ta bort bilden"}
                           className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
                           <Icon icon="tabler:x" className="w-3 h-3 text-white" />
                         </button>
@@ -348,13 +397,13 @@ const ManagerSettings: React.FC = () => {
                       <p className="text-xs text-gray-400 mb-3">{general.jobTitle}</p>
                       <div className="flex flex-wrap gap-2">
                         {/* Upload button */}
-                        <button onClick={() => avatarRef.current?.click()}
-                          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
-                          <Icon icon="tabler:upload" className="w-3.5 h-3.5" />
+                        <button onClick={() => avatarRef.current?.click()} disabled={avatarBusy}
+                          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-50">
+                          <Icon icon={avatarBusy ? "tabler:loader-2" : "tabler:upload"} className={clsx("w-3.5 h-3.5", avatarBusy && "animate-spin")} />
                           {isEn ? "Upload photo" : "Ladda upp foto"}
                         </button>
                         {/* Choose avatar */}
-                        <button onClick={() => setShowAvatarPicker(v => !v)}
+                        <button onClick={() => setShowAvatarPicker(v => !v)} disabled={avatarBusy}
                           className={clsx(
                             "flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl border transition-all",
                             showAvatarPicker ? "text-white border-transparent" : "border-gray-200 text-gray-600 hover:bg-gray-50"
@@ -365,7 +414,7 @@ const ManagerSettings: React.FC = () => {
                         </button>
                         {/* Reset to initials */}
                         {avatarMode !== "initials" && (
-                          <button onClick={() => { setAvatarMode("initials"); setUploadedAvatar(null); setPresetAvatar(null) }}
+                          <button onClick={resetAvatar} disabled={avatarBusy}
                             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-all">
                             <Icon icon="tabler:refresh" className="w-3.5 h-3.5" />
                             {isEn ? "Reset" : "Återställ"}
@@ -373,13 +422,11 @@ const ManagerSettings: React.FC = () => {
                         )}
                       </div>
                       <p className="text-[10px] text-gray-400 mt-2">
-                        {isEn ? "JPG, PNG or GIF · Max 2 MB" : "JPG, PNG eller GIF · Max 2 MB"}
+                        {isEn ? "JPG, PNG, GIF or WebP · Max 2 MB · saved straight away" : "JPG, PNG, GIF eller WebP · Max 2 MB · sparas direkt"}
                       </p>
-                      <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
+                      <input ref={avatarRef} type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={handleAvatarFile} />
                     </div>
                   </div>
-
-                  {/* NOTE: avatar upload is preview-only — not persisted yet. */}
 
                   {/* Avatar picker dropdown */}
                   {showAvatarPicker && (
@@ -389,7 +436,7 @@ const ManagerSettings: React.FC = () => {
                       </p>
                       <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
                         {PRESET_AVATARS.map(p => (
-                          <button key={p.id} onClick={() => { setPresetAvatar(p.id); setAvatarMode("preset"); setShowAvatarPicker(false) }}
+                          <button key={p.id} onClick={() => choosePreset(p.id)}
                             className={clsx(
                               "w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all hover:scale-110",
                               presetAvatar === p.id && avatarMode === "preset" ? "ring-2 ring-offset-1 ring-blue-500 scale-110" : "hover:ring-2 hover:ring-offset-1 hover:ring-gray-300"
@@ -429,13 +476,13 @@ const ManagerSettings: React.FC = () => {
                     <Field label={isEn ? "Phone" : "Telefon"}>
                       <div className="relative">
                         <Icon icon="tabler:phone" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input type="tel" value={general.phone} onChange={e => setGeneral(g => ({ ...g, phone: e.target.value }))} className={clsx(inputCls, "pl-9")} disabled={loading} />
+                        <PhoneInput invalid={badPhones.includes("phone")} value={general.phone} onChange={v => { fixPhone("phone"); setGeneral(g => ({ ...g, phone: v })) }} className={clsx(inputCls, "pl-9")} placeholder="0812345678" disabled={loading} />
                       </div>
                     </Field>
                     <Field label={isEn ? "Mobile phone" : "Mobiltelefon"}>
                       <div className="relative">
                         <Icon icon="tabler:device-mobile" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input type="tel" value={general.mobilePhone} onChange={e => setGeneral(g => ({ ...g, mobilePhone: e.target.value }))} className={clsx(inputCls, "pl-9")} disabled={loading} />
+                        <PhoneInput invalid={badPhones.includes("mobilePhone")} value={general.mobilePhone} onChange={v => { fixPhone("mobilePhone"); setGeneral(g => ({ ...g, mobilePhone: v })) }} className={clsx(inputCls, "pl-9")} placeholder="0701234567" disabled={loading} />
                       </div>
                     </Field>
                     <Field label={isEn ? "Job title" : "Jobbtitel"} required>
@@ -487,7 +534,7 @@ const ManagerSettings: React.FC = () => {
                       <input type="text" value={emergencyContact.relationship} onChange={e => setEmergencyContact(c => ({ ...c, relationship: e.target.value }))} className={inputCls} disabled={loading} />
                     </Field>
                     <Field label={isEn ? "Phone number" : "Telefonnummer"}>
-                      <input type="tel" value={emergencyContact.phoneNumber} onChange={e => setEmergencyContact(c => ({ ...c, phoneNumber: e.target.value }))} className={inputCls} disabled={loading} />
+                      <PhoneInput invalid={badPhones.includes("emergencyPhone")} value={emergencyContact.phoneNumber} onChange={v => { fixPhone("emergencyPhone"); setEmergencyContact(c => ({ ...c, phoneNumber: v })) }} className={inputCls} placeholder="0701234567" disabled={loading} />
                     </Field>
                     <Field label={isEn ? "Email" : "E-post"} span2>
                       <input type="email" value={emergencyContact.email} onChange={e => setEmergencyContact(c => ({ ...c, email: e.target.value }))} className={inputCls} disabled={loading} />
@@ -496,21 +543,30 @@ const ManagerSettings: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end pt-4 border-t border-gray-100">
-                  <SaveBtn label={isEn ? "Save changes" : "Spara ändringar"} disabled={loading} onClick={() => save(async () => {
-                    await saveManagerInfo({
-                      firstName: general.firstName,
-                      lastName: general.lastName,
-                      email: general.email,
-                      privateEmail: general.privateEmail,
-                      phone: general.phone,
-                      mobilePhone: general.mobilePhone,
-                      jobTitle: general.jobTitle,
-                      homeAddress: general.homeAddress,
-                      gender: general.gender,
-                      professionalBio: general.professionalBio,
-                      emergencyContact,
+                  <SaveBtn label={isEn ? "Save changes" : "Spara ändringar"} disabled={loading} onClick={() => {
+                    const bad = ([["phone", general.phone], ["mobilePhone", general.mobilePhone], ["emergencyPhone", emergencyContact.phoneNumber]] as const)
+                      .filter(([, v]) => !isValidPhone(v)).map(([k]) => k)
+                    setBadPhones(bad)
+                    if (bad.length) {
+                      show(isEn ? "Check the phone numbers — 6 to 15 digits only, may start with +." : "Kontrollera telefonnumren — endast 6 till 15 siffror, får börja med +.", "error")
+                      return
+                    }
+                    save(async () => {
+                      await saveManagerInfo({
+                        firstName: general.firstName,
+                        lastName: general.lastName,
+                        email: general.email,
+                        privateEmail: general.privateEmail,
+                        phone: general.phone,
+                        mobilePhone: general.mobilePhone,
+                        jobTitle: general.jobTitle,
+                        homeAddress: general.homeAddress,
+                        gender: general.gender,
+                        professionalBio: general.professionalBio,
+                        emergencyContact,
+                      })
                     })
-                  })} />
+                  }} />
                 </div>
               </div>
             )}

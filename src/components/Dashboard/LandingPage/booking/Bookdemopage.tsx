@@ -1,8 +1,9 @@
 "use client"
 // ══════════════════════════════════════════════════════════════════════
 // /companies/book-demo — CEOs / managers book a meeting with the VeroCV team.
-// Steps: 1 Your details · 2 Your company · 3 A few questions
+// One short form: first name, last name, email, phone, role → "Boka Demo".
 // (No time picker — the VeroCV team replies by email to find a time.)
+// The phone field only accepts digits (PhoneInput) and is optional.
 // Sends to POST /api/book-demo → emailed to info@verocv.se with Resend
 // (plus a confirmation email to the person who booked).
 // ══════════════════════════════════════════════════════════════════════
@@ -11,6 +12,8 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useAuthTranslation } from "@/hooks/useAuthTranslation"
 import Link from "next/link"
+import PhoneInput from "@/components/shared/PhoneInput"
+import { isValidPhone } from "@/utils/phone"
 
 type Language = "en" | "sv"
 
@@ -23,27 +26,9 @@ interface FormState {
   email: string
   phone: string
   role: string
-  companyName: string
-  companySize: string
-  industry: string
-  consultantCount: string
-  /** Step 3 — "What would you like to know more about?" (optional) */
-  interests: string
-  /** Step 3 — biggest challenge today (optional) */
-  challenge: string
-  /** Step 3 — when they want to get started (optional) */
-  timeline: string
-  /** Step 3 — how they heard about VeroCV (required) */
-  source: string
-  /** Step 3 — "Other / elsewhere" details (optional) */
-  sourceOther: string
   /** Honeypot — hidden from people, bots fill it in */
   website: string
 }
-
-type Step = 1 | 2 | 3
-const STEPS: Step[] = [1, 2, 3]
-const OTHER_SOURCE = "other"
 
 /* ─────────────────────────────────────────────
    TRANSLATIONS
@@ -58,49 +43,15 @@ const translations = {
     heroTitle: "Se VeroCV i",
     heroTitleAccent: "action.",
     heroDesc: "Låt oss visa dig hur VeroCV kan förvandla din konsultverksamhet. 30 minuter. Inga förpliktelser.",
-    /* steps */
-    step1Label: "Dina uppgifter",
-    step2Label: "Ditt företag",
-    step3Label: "Några frågor",
+    /* form */
+    formTitle: "Dina uppgifter",
+    formIntro: "Fyll i dina uppgifter så hör vi av oss för att boka en tid.",
     firstName: "Förnamn",
     lastName: "Efternamn",
     email: "E-postadress",
     phone: "Telefonnummer",
     role: "Din roll",
     rolePlaceholder: "t.ex. Head of Talent, VD, Rekryterare",
-    /* form step 2 */
-    companyName: "Företagsnamn",
-    companySize: "Antal anställda",
-    companySizes: ["1–10", "11–50", "51–200", "201–500", "500+"],
-    industry: "Bransch",
-    industries: ["Konsult & Bemanning", "IT & Tech", "Finans", "Vård & Omsorg", "Bygg & Industri", "Annat"],
-    consultantCount: "Antal konsulter ni hanterar",
-    consultantCounts: ["Färre än 10", "10–50", "51–100", "101–500", "Fler än 500"],
-    /* form step 3 */
-    questionsIntro: "Några snabba frågor så att vi kan förbereda demon efter era behov.",
-    interests: "Vad vill du veta mer om? (valfritt)",
-    interestsPlaceholder: "T.ex. hur vi hanterar massimport av CV, integrationer, prissättning...",
-    challenge: "Vad är er största utmaning idag med CV:n och konsulter? (valfritt)",
-    challengePlaceholder: "T.ex. det tar för lång tid att anpassa CV:n till varje uppdrag...",
-    timeline: "När vill ni komma igång? (valfritt)",
-    timelines: ["Så snart som möjligt", "Inom 1–3 månader", "Senare i år", "Vill bara utforska"],
-    source: "Hur hörde du talas om VeroCV?",
-    sourcePlaceholder: "Välj ett alternativ",
-    sources: [
-      { value: "google", label: "Google / sökmotor" },
-      { value: "linkedin", label: "LinkedIn" },
-      { value: "social", label: "Sociala medier (Instagram, Facebook, TikTok)" },
-      { value: "recommendation", label: "Rekommendation från kollega eller vän" },
-      { value: "event", label: "Event, mässa eller konferens" },
-      { value: "article", label: "Artikel, nyhet eller podcast" },
-      { value: "verocv_user", label: "Använder redan VeroCV" },
-      { value: "other", label: "Annat / någon annanstans" },
-    ],
-    sourceOther: "Var? (valfritt)",
-    sourceOtherPlaceholder: "T.ex. namnet på eventet, podden eller personen",
-    /* nav */
-    back: "Tillbaka",
-    next: "Nästa",
     submit: "Boka Demo",
     submitting: "Skickar...",
     sendError: "Det gick inte att skicka din bokning. Försök igen eller mejla oss på",
@@ -121,6 +72,7 @@ const translations = {
     /* validation */
     required: "Detta fält är obligatoriskt",
     invalidEmail: "Ange en giltig e-postadress",
+    invalidPhone: "Ange ett giltigt telefonnummer (6–15 siffror)",
     /* footer */
     contact: "Kontakt",
     about: "Om Oss",
@@ -136,45 +88,14 @@ const translations = {
     heroTitle: "See VeroCV in",
     heroTitleAccent: "action.",
     heroDesc: "Let us show you how VeroCV can transform your consulting operation. 30 minutes. No commitment.",
-    step1Label: "Your details",
-    step2Label: "Your company",
-    step3Label: "A few questions",
+    formTitle: "Your details",
+    formIntro: "Fill in your details and we'll get back to you to book a time.",
     firstName: "First name",
     lastName: "Last name",
     email: "Email address",
     phone: "Phone number",
     role: "Your role",
     rolePlaceholder: "e.g. Head of Talent, CEO, Recruiter",
-    companyName: "Company name",
-    companySize: "Number of employees",
-    companySizes: ["1–10", "11–50", "51–200", "201–500", "500+"],
-    industry: "Industry",
-    industries: ["Staffing & Consulting", "IT & Tech", "Finance", "Healthcare", "Construction & Industry", "Other"],
-    consultantCount: "Consultants you manage",
-    consultantCounts: ["Fewer than 10", "10–50", "51–100", "101–500", "More than 500"],
-    questionsIntro: "A few quick questions so we can tailor the demo to your needs.",
-    interests: "What would you like to know more about? (optional)",
-    interestsPlaceholder: "e.g. bulk CV import, integrations, pricing...",
-    challenge: "What's your biggest challenge today with CVs and consultants? (optional)",
-    challengePlaceholder: "e.g. tailoring CVs for every assignment takes too long...",
-    timeline: "When are you looking to get started? (optional)",
-    timelines: ["As soon as possible", "Within 1–3 months", "Later this year", "Just exploring"],
-    source: "How did you hear about VeroCV?",
-    sourcePlaceholder: "Choose an option",
-    sources: [
-      { value: "google", label: "Google / search engine" },
-      { value: "linkedin", label: "LinkedIn" },
-      { value: "social", label: "Social media (Instagram, Facebook, TikTok)" },
-      { value: "recommendation", label: "Recommendation from a colleague or friend" },
-      { value: "event", label: "Event, fair or conference" },
-      { value: "article", label: "Article, news or podcast" },
-      { value: "verocv_user", label: "Already using VeroCV" },
-      { value: "other", label: "Other / somewhere else" },
-    ],
-    sourceOther: "Where? (optional)",
-    sourceOtherPlaceholder: "e.g. the name of the event, podcast or person",
-    back: "Back",
-    next: "Next",
     submit: "Book Demo",
     submitting: "Sending...",
     sendError: "We couldn't send your booking. Please try again or email us at",
@@ -192,6 +113,7 @@ const translations = {
     responseTime: "Usually responds within 2 hours",
     required: "This field is required",
     invalidEmail: "Please enter a valid email address",
+    invalidPhone: "Enter a valid phone number (6–15 digits)",
     contact: "Contact",
     about: "About",
     terms: "Terms & Privacy",
@@ -199,7 +121,6 @@ const translations = {
     allRights: "All rights reserved.",
   },
 } as const
-
 
 /* ─────────────────────────────────────────────
    FIELD COMPONENT
@@ -233,17 +154,13 @@ const BookDemoPage: React.FC = () => {
   const { language, setLanguage } = useAuthTranslation("sv")
   const t = translations[language]
 
-  const [step, setStep] = useState<Step>(1)
   const [submitted, setSubmitted] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [form, setForm] = useState<FormState>({
-    firstName: "", lastName: "", email: "", phone: "", role: "",
-    companyName: "", companySize: "", industry: "", consultantCount: "",
-    interests: "", challenge: "", timeline: "", source: "", sourceOther: "", website: "",
+    firstName: "", lastName: "", email: "", phone: "", role: "", website: "",
   })
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
-
 
   useEffect(() => { setIsVisible(true) }, [])
 
@@ -253,47 +170,36 @@ const BookDemoPage: React.FC = () => {
   }
 
   /* ── Validation ── */
-  const validateStep = (s: Step): boolean => {
+  const validate = (): boolean => {
     const errs: Partial<Record<keyof FormState, string>> = {}
-    if (s === 1) {
-      if (!form.firstName.trim()) errs.firstName = t.required
-      if (!form.lastName.trim()) errs.lastName = t.required
-      if (!form.email.trim()) errs.email = t.required
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = t.invalidEmail
-      if (!form.role.trim()) errs.role = t.required
-    }
-    if (s === 2) {
-      if (!form.companyName.trim()) errs.companyName = t.required
-      if (!form.companySize) errs.companySize = t.required
-      if (!form.industry) errs.industry = t.required
-      if (!form.consultantCount) errs.consultantCount = t.required
-    }
-    if (s === 3) {
-      if (!form.source) errs.source = t.required
-    }
+    if (!form.firstName.trim()) errs.firstName = t.required
+    if (!form.lastName.trim()) errs.lastName = t.required
+    if (!form.email.trim()) errs.email = t.required
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = t.invalidEmail
+    // Phone is optional — but if filled in it must be a real number.
+    if (form.phone && !isValidPhone(form.phone)) errs.phone = t.invalidPhone
+    if (!form.role.trim()) errs.role = t.required
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep(step)) setStep(s => (s < 3 ? ((s + 1) as Step) : s))
-  }
-  const handleBack = () => setStep(s => (s > 1 ? ((s - 1) as Step) : s))
-
   /* ── Submit → /api/book-demo (Resend → info@verocv.se) ── */
-  const handleSubmit = async () => {
-    if (!validateStep(3) || sending) return
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!validate() || sending) return
     setSending(true)
     setSendError(null)
     try {
-      const sourceLabel = t.sources.find(s => s.value === form.source)?.label ?? form.source
       const res = await fetch("/api/book-demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          source: sourceLabel,
-          sourceOther: form.source === OTHER_SOURCE ? form.sourceOther : "",
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim(),
+          phone: form.phone,
+          role: form.role.trim(),
+          website: form.website, // honeypot
           language,
         }),
       })
@@ -314,9 +220,6 @@ const BookDemoPage: React.FC = () => {
     setLanguage(lang)
     localStorage.setItem("dashboardLanguage", lang)
   }
-
-  /* ─── Progress bar width ─── */
-  const progressWidth = `${(step / STEPS.length) * 100}%`
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 relative overflow-hidden">
@@ -412,37 +315,16 @@ const BookDemoPage: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="backdrop-blur-sm bg-white/90 rounded-2xl border border-blue-200/40 shadow-sm overflow-hidden">
 
-              {/* Progress bar */}
-              {!submitted && (
-                <div className="px-8 pt-8 pb-0">
-                  {/* Step labels */}
-                  <div className="flex items-center justify-between mb-3">
-                    {STEPS.map((s) => (
-                      <div key={s} className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${step >= s ? "text-white" : "text-slate-400 border-2 border-slate-200"}`}
-                          style={step >= s ? { backgroundColor: "rgb(5,22,80)" } : {}}>
-                          {step > s ? (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          ) : s}
-                        </div>
-                        <span className={`text-xs font-medium hidden sm:block transition-colors duration-300 ${step === s ? "text-slate-800" : "text-slate-400"}`}>
-                          {s === 1 ? t.step1Label : s === 2 ? t.step2Label : t.step3Label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
 
-                  {/* Progress track */}
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-8">
-                    <div className="h-full rounded-full transition-all duration-500 ease-out"
-                      style={{ width: progressWidth, backgroundColor: "rgb(5,22,80)" }} />
-                  </div>
+              {/* Title */}
+              {!submitted && (
+                <div className="px-8 pt-8 pb-6">
+                  <h2 className="text-lg font-semibold text-slate-900">{t.formTitle}</h2>
+                  <p className="text-sm text-slate-500 mt-1">{t.formIntro}</p>
                 </div>
               )}
 
-              <div className="px-8 pb-8">
+              <div className={`px-8 pb-8 ${submitted ? "pt-8" : ""}`}>
                 {/* ── SUCCESS STATE ── */}
                 {submitted ? (
                   <div className="text-center py-12">
@@ -473,139 +355,36 @@ const BookDemoPage: React.FC = () => {
                     </div>
                   </div>
 
-                ) : step === 1 ? (
-                  /* ── STEP 1: PERSONAL ── */
-                  <div className="space-y-5">
+                ) : (
+                  /* ── THE FORM ── */
+                  <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <Field label={t.firstName} error={errors.firstName}>
+                      <Field label={t.firstName} required error={errors.firstName}>
                         <input
                           type="text" value={form.firstName} onChange={e => set("firstName", e.target.value)}
-                          placeholder="Anna" className={inputClass(errors.firstName)} />
+                          placeholder="Anna" autoComplete="given-name" className={inputClass(errors.firstName)} />
                       </Field>
-                      <Field label={t.lastName} error={errors.lastName}>
+                      <Field label={t.lastName} required error={errors.lastName}>
                         <input
                           type="text" value={form.lastName} onChange={e => set("lastName", e.target.value)}
-                          placeholder="Karlsson" className={inputClass(errors.lastName)} />
+                          placeholder="Karlsson" autoComplete="family-name" className={inputClass(errors.lastName)} />
                       </Field>
                     </div>
-                    <Field label={t.email} error={errors.email}>
+                    <Field label={t.email} required error={errors.email}>
                       <input
                         type="email" value={form.email} onChange={e => set("email", e.target.value)}
-                        placeholder="anna@foretaget.se" className={inputClass(errors.email)} />
+                        placeholder="anna@foretaget.se" autoComplete="email" className={inputClass(errors.email)} />
                     </Field>
-                    <Field label={t.phone}>
-                      <input
-                        type="tel" value={form.phone} onChange={e => set("phone", e.target.value)}
-                        placeholder="+46 70 000 00 00" className={inputClass()} />
+                    <Field label={t.phone} error={errors.phone}>
+                      <PhoneInput
+                        value={form.phone} onChange={v => set("phone", v)}
+                        placeholder="+46701234567" invalid={!!errors.phone} className={inputClass(errors.phone)} />
                     </Field>
-                    <Field label={t.role} error={errors.role}>
+                    <Field label={t.role} required error={errors.role}>
                       <input
                         type="text" value={form.role} onChange={e => set("role", e.target.value)}
-                        placeholder={t.rolePlaceholder} className={inputClass(errors.role)} />
+                        placeholder={t.rolePlaceholder} autoComplete="organization-title" className={inputClass(errors.role)} />
                     </Field>
-                  </div>
-
-                ) : step === 2 ? (
-                  /* ── STEP 2: COMPANY ── */
-                  <div className="space-y-5">
-                    <Field label={t.companyName} error={errors.companyName}>
-                      <input
-                        type="text" value={form.companyName} onChange={e => set("companyName", e.target.value)}
-                        placeholder="Nordic Konsult AB" className={inputClass(errors.companyName)} />
-                    </Field>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <Field label={t.companySize} error={errors.companySize}>
-                        <select
-                          value={form.companySize} onChange={e => set("companySize", e.target.value)}
-                          className={inputClass(errors.companySize) + " cursor-pointer"}>
-                          <option value="">—</option>
-                          {t.companySizes.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </Field>
-                      <Field label={t.industry} error={errors.industry}>
-                        <select
-                          value={form.industry} onChange={e => set("industry", e.target.value)}
-                          className={inputClass(errors.industry) + " cursor-pointer"}>
-                          <option value="">—</option>
-                          {t.industries.map(i => <option key={i} value={i}>{i}</option>)}
-                        </select>
-                      </Field>
-                    </div>
-                    <Field label={t.consultantCount} error={errors.consultantCount}>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {t.consultantCounts.map(c => (
-                          <button key={c} type="button"
-                            onClick={() => set("consultantCount", c)}
-                            className={`py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 text-left ${form.consultantCount === c
-                              ? "text-white"
-                              : "border-blue-200/60 text-slate-600 bg-white hover:border-blue-300"
-                              }`}
-                            style={form.consultantCount === c ? { backgroundColor: "rgb(5,22,80)", borderColor: "rgb(5,22,80)" } : {}}>
-                            {c}
-                          </button>
-                        ))}
-                      </div>
-                      {errors.consultantCount && <span className="text-xs text-red-500">{errors.consultantCount}</span>}
-                    </Field>
-                  </div>
-
-                ) : (
-                  /* ── STEP 3: A FEW QUESTIONS ── */
-                  <div className="space-y-6">
-                    <p className="text-sm text-slate-500 -mt-2">{t.questionsIntro}</p>
-
-                    {/* 1 — what to know more about (optional, existing question) */}
-                    <Field label={t.interests}>
-                      <textarea
-                        rows={3} value={form.interests} onChange={e => set("interests", e.target.value)}
-                        placeholder={t.interestsPlaceholder}
-                        className={`${inputClass()} resize-none`} />
-                    </Field>
-
-                    {/* 2 — biggest challenge (optional) */}
-                    <Field label={t.challenge}>
-                      <textarea
-                        rows={3} value={form.challenge} onChange={e => set("challenge", e.target.value)}
-                        placeholder={t.challengePlaceholder}
-                        className={`${inputClass()} resize-none`} />
-                    </Field>
-
-                    {/* 3 — timeline (optional) */}
-                    <Field label={t.timeline}>
-                      <div className="grid grid-cols-2 gap-2">
-                        {t.timelines.map(option => (
-                          <button key={option} type="button"
-                            onClick={() => set("timeline", form.timeline === option ? "" : option)}
-                            className={`py-2.5 px-4 rounded-xl border-2 text-sm font-medium transition-all duration-200 text-left ${form.timeline === option
-                              ? "text-white"
-                              : "border-blue-200/60 text-slate-600 bg-white hover:border-blue-300"
-                              }`}
-                            style={form.timeline === option ? { backgroundColor: "rgb(5,22,80)", borderColor: "rgb(5,22,80)" } : {}}>
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    </Field>
-
-                    {/* 4 — how did you hear about VeroCV (required) */}
-                    <Field label={t.source} required error={errors.source}>
-                      <select
-                        value={form.source}
-                        onChange={e => { set("source", e.target.value); if (e.target.value !== OTHER_SOURCE) set("sourceOther", "") }}
-                        className={inputClass(errors.source) + " cursor-pointer"}>
-                        <option value="" disabled>{t.sourcePlaceholder}</option>
-                        {t.sources.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </select>
-                    </Field>
-
-                    {form.source === OTHER_SOURCE && (
-                      <Field label={t.sourceOther}>
-                        <input
-                          type="text" value={form.sourceOther} onChange={e => set("sourceOther", e.target.value)}
-                          placeholder={t.sourceOtherPlaceholder} maxLength={200}
-                          className={inputClass()} />
-                      </Field>
-                    )}
 
                     {/* Honeypot (hidden from people) */}
                     <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
@@ -618,33 +397,9 @@ const BookDemoPage: React.FC = () => {
                         <a href="mailto:info@verocv.se" className="underline font-medium">info@verocv.se</a>
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* ── NAV BUTTONS ── */}
-                {!submitted && (
-                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-blue-100">
-                    {step > 1 ? (
-                      <button onClick={handleBack}
-                        className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors duration-200">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                        </svg>
-                        {t.back}
-                      </button>
-                    ) : <div />}
-
-                    {step < 3 ? (
-                      <button onClick={handleNext}
-                        className="flex items-center gap-2 px-8 py-3 rounded-full text-white text-sm font-medium hover:shadow-lg transition-all duration-300"
-                        style={{ backgroundColor: "rgb(5,22,80)" }}>
-                        {t.next}
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                        </svg>
-                      </button>
-                    ) : (
-                      <button onClick={handleSubmit} disabled={sending}
+                    <div className="flex justify-end mt-8 pt-6 border-t border-blue-100">
+                      <button type="submit" disabled={sending}
                         className="flex items-center gap-2 px-8 py-3 rounded-full text-white text-sm font-medium hover:shadow-lg transition-all duration-300 relative overflow-hidden group disabled:opacity-60 disabled:cursor-wait"
                         style={{ backgroundColor: "rgb(5,22,80)" }}>
                         <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
@@ -653,8 +408,8 @@ const BookDemoPage: React.FC = () => {
                         </svg>
                         <span className="relative z-10">{sending ? t.submitting : t.submit}</span>
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  </form>
                 )}
               </div>
             </div>

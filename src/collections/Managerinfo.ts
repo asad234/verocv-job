@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { validatePhoneField } from '@/utils/phone'
 
 const ManagerInfo: CollectionConfig = {
   slug: 'manager-info',
@@ -21,8 +22,8 @@ const ManagerInfo: CollectionConfig = {
     { name: 'lastName', label: 'Last Name', type: 'text' },
     { name: 'email', label: 'Work Email', type: 'email' },
     { name: 'privateEmail', label: 'Private Email', type: 'email' },
-    { name: 'phone', label: 'Phone', type: 'text' },
-    { name: 'mobilePhone', label: 'Mobile Phone', type: 'text' },
+    { name: 'phone', label: 'Phone', type: 'text', validate: validatePhoneField },
+    { name: 'mobilePhone', label: 'Mobile Phone', type: 'text', validate: validatePhoneField },
     { name: 'jobTitle', label: 'Job Title', type: 'text' },
     { name: 'homeAddress', label: 'Home Address', type: 'text' },
     {
@@ -35,6 +36,28 @@ const ManagerInfo: CollectionConfig = {
       ],
     },
     { name: 'professionalBio', label: 'Professional Bio', type: 'textarea' },
+
+    // ── Profile photo (General tab) — saved by /api/company/managers/settings/avatar ──
+    {
+      name: 'avatar',
+      label: 'Profile Photo',
+      type: 'group',
+      fields: [
+        {
+          name: 'mode',
+          label: 'Shown as',
+          type: 'select',
+          defaultValue: 'initials',
+          options: [
+            { label: 'Initials', value: 'initials' },
+            { label: 'Uploaded photo', value: 'upload' },
+            { label: 'Avatar', value: 'preset' },
+          ],
+        },
+        { name: 'uploadImage', label: 'Uploaded Photo', type: 'upload', relationTo: 'media' },
+        { name: 'preset', label: 'Avatar', type: 'text' },
+      ],
+    },
 
     // ── Emergency contact (General tab) ──
     {
@@ -54,7 +77,7 @@ const ManagerInfo: CollectionConfig = {
           admin: { description: 'e.g. Spouse, Parent, Sibling, Friend' },
         },
         { name: 'email', label: 'Email', type: 'email' },
-        { name: 'phoneNumber', label: 'Phone Number', type: 'text' },
+        { name: 'phoneNumber', label: 'Phone Number', type: 'text', validate: validatePhoneField },
       ],
     },
 

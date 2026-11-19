@@ -7,6 +7,9 @@ import Card from "@/components/Dashboard/ReUsable/Card"
 import { toast } from "sonner"
 import { useBusinessAdminTranslations } from "@/utils/Businessadmintranslations"
 import type { BusinessAdminInfo, BusinessAdminInfoResponse } from "@/types/payloadTypes"
+import PhoneInput from "@/components/shared/PhoneInput"
+import { isValidPhone, sanitizePhone } from "@/utils/phone"
+import { IMAGE_ACCEPT, imageProblem } from "@/utils/imageRules"
 
 /* ─────────────────────────────────────────────
    SHARED UI HELPERS
@@ -73,11 +76,21 @@ const saveSettings = async (patch: Partial<BusinessAdminInfo>): Promise<Business
   return body.data
 }
 
+/** Company logo — saved straight away on its own route. */
+const logoCall = async (init: RequestInit): Promise<string | null> => {
+  const res = await fetch("/api/company/settings/logo", init)
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body?.message || "Failed")
+  return body.data?.url ?? null
+}
+
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
 const BusinessAdminSettings: React.FC = () => {
-  const { t } = useBusinessAdminTranslations()
+  const { t, ...tRest } = useBusinessAdminTranslations()
+  // Messages for the photo / phone checks follow the dashboard language.
+  const isEn = ((tRest as { language?: string }).language ?? (t.saving.startsWith("Sav") ? "en" : "sv")) === "en"
   const [activeTab, setActiveTab] = useState("general")
   const logoRef = useRef<HTMLInputElement>(null)
 
@@ -90,6 +103,7 @@ const BusinessAdminSettings: React.FC = () => {
     companyWebsite: "", companyAddress: "",
   })
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoBusy, setLogoBusy] = useState(false)
   const [notif, setNotif] = useState({ emailNotif: true, newManagerNotif: true, placementAlert: true, weeklyReport: false })
   const [security, setSecurity] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" })
   const [twoFactor, setTwoFactor] = useState(false)
@@ -107,7 +121,7 @@ const BusinessAdminSettings: React.FC = () => {
           firstName: data.firstName ?? "",
           lastName: data.lastName ?? "",
           email: data.email ?? "",
-          phone: data.phone ?? "",
+          phone: sanitizePhone(data.phone ?? ""),
           jobTitle: data.jobTitle ?? "",
         })
         setCompany({
@@ -116,7 +130,7 @@ const BusinessAdminSettings: React.FC = () => {
           industry: data.company?.industry ?? "",
           companySize: data.company?.companySize ?? "",
           companyEmail: data.company?.companyEmail ?? "",
-          companyPhone: data.company?.companyPhone ?? "",
+          companyPhone: sanitizePhone(data.company?.companyPhone ?? ""),
           companyWebsite: data.company?.companyWebsite ?? "",
           companyAddress: data.company?.companyAddress ?? "",
         })
@@ -148,12 +162,44 @@ const BusinessAdminSettings: React.FC = () => {
     catch { toast.error(t.failedToSave, { id }) }
   }
 
-  const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = "" // so the same file can be picked again
     if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = () => setLogoPreview(reader.result as string)
-    reader.readAsDataURL(file)
+    const problem = imageProblem(file, isEn)
+    if (problem) { toast.error(problem); return }
+    const form = new FormData()
+    form.append("file", file)
+    setLogoBusy(true)
+    const id = toast.loading(t.saving)
+    try {
+      setLogoPreview(await logoCall({ method: "POST", body: form }))
+      toast.success(t.saved, { id })
+    } catch (err) {
+      toast.error((err as Error).message || t.failedToSave, { id })
+    } finally {
+      setLogoBusy(false)
+    }
+  }
+
+  const removeLogo = async () => {
+    setLogoBusy(true)
+    const id = toast.loading(t.saving)
+    try {
+      await logoCall({ method: "DELETE" })
+      setLogoPreview(null)
+      toast.success(t.saved, { id })
+    } catch {
+      toast.error(t.failedToSave, { id })
+    } finally {
+      setLogoBusy(false)
+    }
+  }
+
+  const phonesOk = (...phones: string[]) => {
+    if (phones.every(isValidPhone)) return true
+    toast.error(isEn ? "Check the phone number — 6 to 15 digits, may start with +." : "Kontrollera telefonnumret — 6 till 15 siffror, får börja med +.")
+    return false
   }
 
   const handlePasswordSave = () => {
@@ -224,7 +270,7 @@ const BusinessAdminSettings: React.FC = () => {
                     <input type="email" value={general.email} onChange={e => setGeneral(g => ({ ...g, email: e.target.value }))} className={inputCls} placeholder="anna@company.se" disabled={loading} {...fo} />
                   </Field>
                   <Field label={t.phone}>
-                    <input type="tel" value={general.phone} onChange={e => setGeneral(g => ({ ...g, phone: e.target.value }))} className={inputCls} placeholder="+46 70 000 00 00" disabled={loading} {...fo} />
+                    <PhoneInput value={general.phone} onChange={v => setGeneral(g => ({ ...g, phone: v }))} className={inputCls} placeholder="+46 70 000 00 00" disabled={loading} {...fo} />
                   </Field>
                   <Field label={t.jobTitle} required>
                     <input type="text" value={general.jobTitle} onChange={e => setGeneral(g => ({ ...g, jobTitle: e.target.value }))} className={inputCls} placeholder={t.jobTitlePlaceholder} disabled={loading} {...fo} />
@@ -234,7 +280,7 @@ const BusinessAdminSettings: React.FC = () => {
                   <SaveBtn
                     label={t.saveChanges}
                     disabled={loading}
-                    onClick={() => save(async () => {
+                    onClick={() => phonesOk(general.phone) && save(async () => {
                       await saveSettings({
                         firstName: general.firstName,
                         lastName: general.lastName,
@@ -254,27 +300,26 @@ const BusinessAdminSettings: React.FC = () => {
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">{t.companyLogo}</h2>
                   <div className="flex flex-col sm:flex-row items-start gap-5">
-                    <div onClick={() => logoRef.current?.click()}
+                    <div onClick={() => !logoBusy && logoRef.current?.click()}
                       className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-all overflow-hidden flex-shrink-0">
-                      {logoPreview ? <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" /> : <Icon icon="tabler:upload" className="w-8 h-8 text-gray-400" />}
+                      {logoBusy
+                        ? <Icon icon="tabler:loader-2" className="w-8 h-8 text-gray-400 animate-spin" />
+                        : logoPreview ? <img src={logoPreview} alt="Logo" className="w-full h-full object-contain" /> : <Icon icon="tabler:upload" className="w-8 h-8 text-gray-400" />}
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-2">{t.logoDesc}</p>
                       <p className="text-xs text-gray-400 mb-3">{t.logoHint}</p>
                       <div className="flex gap-2">
-                        <button onClick={() => logoRef.current?.click()} className="px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
+                        <button onClick={() => logoRef.current?.click()} disabled={logoBusy} className="px-4 py-2 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all disabled:opacity-50">
                           <Icon icon="tabler:upload" className="w-4 h-4 inline mr-1" />{t.uploadLogo}
                         </button>
                         {logoPreview && (
-                          <button onClick={() => setLogoPreview(null)} className="px-4 py-2 text-sm rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-all">
+                          <button onClick={removeLogo} disabled={logoBusy} className="px-4 py-2 text-sm rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-all disabled:opacity-50">
                             {t.removeLogo}
                           </button>
                         )}
                       </div>
-                      <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFile} />
-                      {/* NOTE: logo file isn't uploaded to Payload's media collection yet —
-                          this only previews locally. Uploading needs multipart/form-data
-                          to Payload's media endpoint, separate from this JSON settings route. */}
+                      <input ref={logoRef} type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={handleLogoFile} />
                     </div>
                   </div>
                 </div>
@@ -303,7 +348,7 @@ const BusinessAdminSettings: React.FC = () => {
                       <input type="email" value={company.companyEmail} onChange={e => setCompany(c => ({ ...c, companyEmail: e.target.value }))} className={inputCls} placeholder={t.companyEmailPlaceholder} disabled={loading} {...fo} />
                     </Field>
                     <Field label={t.companyPhoneLabel}>
-                      <input type="tel" value={company.companyPhone} onChange={e => setCompany(c => ({ ...c, companyPhone: e.target.value }))} className={inputCls} placeholder={t.companyPhonePlaceholder} disabled={loading} {...fo} />
+                      <PhoneInput value={company.companyPhone} onChange={v => setCompany(c => ({ ...c, companyPhone: v }))} className={inputCls} placeholder={t.companyPhonePlaceholder} disabled={loading} {...fo} />
                     </Field>
                     <Field label={t.companyWebsiteLabel}>
                       <div className="flex">
@@ -322,7 +367,7 @@ const BusinessAdminSettings: React.FC = () => {
                   <SaveBtn
                     label={t.saveCompany}
                     disabled={loading}
-                    onClick={() => save(async () => {
+                    onClick={() => phonesOk(company.companyPhone) && save(async () => {
                       await saveSettings({ company })
                     })}
                   />

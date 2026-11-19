@@ -1,4 +1,6 @@
 "use client"
+// FILE LOCATION:  src/components/Dashboard/Company-dashboard/admin/Businessadminlayout.tsx   (REPLACE)
+// CHANGE:         the header avatar shows your profile photo (Settings → General), initials until you upload one.
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
@@ -11,6 +13,8 @@ import AdminNotificationBell from "./AdminNotificationBell"
 import { useBusinessAdmin } from "./Businessadmincontext"
 import { useBusinessAdminTranslations } from "@/utils/Businessadmintranslations"
 import { useChatUnread } from "@/utils/chat"
+import ProfilePhoto from "@/components/shared/ProfilePhoto"
+import { useAdminProfile } from "@/utils/adminProfile"
 
 const BusinessAdminLayout = ({ children }: { children: React.ReactNode }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false)
@@ -56,7 +60,9 @@ const BusinessAdminLayout = ({ children }: { children: React.ReactNode }) => {
     setView("account")
   }
 
-  const userInitials = session?.user?.name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) ?? "BA"
+  // Your photo + name from Settings (updates as soon as you upload / save there).
+  const profile = useAdminProfile()
+  const displayName = profile?.name || session?.user?.name || "Business Admin"
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -129,11 +135,9 @@ const BusinessAdminLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="relative">
               <button id="ba-avatar-btn" onClick={() => setProfileOpen(v => !v)}
                 className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: "rgb(5,22,80)" }}>
-                  {userInitials}
-                </div>
+                <ProfilePhoto src={profile?.avatar} name={displayName} size={32} />
                 <span className="ml-2 text-sm font-medium text-gray-700 hidden sm:block">
-                  {session?.user?.name ?? "Business Admin"}
+                  {displayName}
                 </span>
               </button>
               <div ref={profileRef} className={clsx("absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-md shadow-md z-10", isProfileOpen ? "block" : "hidden")}>

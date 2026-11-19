@@ -1,15 +1,16 @@
 // ══════════════════════════════════════════════════════════════════════
-// FILE LOCATION:  src/app/(frontend)/api/book-demo/route.ts
+// FILE LOCATION:  src/app/(frontend)/api/book-demo/route.ts   (REPLACE)
 // URL:            POST /api/book-demo
-// WHAT IT DOES:   "Book a demo" form (no time picker) on /companies/book-demo → emails the request to
-//                 info@verocv.se with Resend (same setup as the support/contact form),
-//                 and sends the person a short confirmation.
+// WHAT IT DOES:   "Book a demo" form on /companies/book-demo → emails the request to
+//                 info@verocv.se with Resend, and sends the person a short confirmation.
+//   Body: { firstName, lastName, email, phone?, role, website (honeypot), language }
+//   • Required: firstName, lastName, email, role. Phone is optional, but if it is
+//     sent it must be digits only (may start with +), 6–15 digits.
 //
 // ENV (.env):
 //   RESEND_API_KEY=re_...                     (already used by /api/contact)
 //   DEMO_REQUEST_TO=info@verocv.se            (optional, defaults to info@verocv.se)
-//   RESEND_FROM="VeroCV <noreply@verocv.se>"  (optional — must be a domain verified in Resend;
-//                                              use the same "from" as your /api/contact route)
+//   RESEND_FROM="VeroCV <noreply@verocv.se>"  (optional — must be a domain verified in Resend)
 //
 // If your app folder has no "(frontend)" group, use the same path without it:
 //   src/app/api/book-demo/route.ts
@@ -17,6 +18,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { isValidPhone, sanitizePhone } from '@/utils/phone'
 
 const TO = process.env.DEMO_REQUEST_TO || 'info@verocv.se'
 const FROM = process.env.RESEND_FROM || 'VeroCV <noreply@verocv.se>'
@@ -40,7 +42,6 @@ const esc = (s: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
-const nl2br = (s: string) => esc(s).replace(/\n/g, '<br/>')
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,37 +65,18 @@ export async function POST(req: NextRequest) {
       firstName: str(body.firstName, 80),
       lastName: str(body.lastName, 80),
       email: str(body.email, 254).toLowerCase(),
-      phone: str(body.phone, 40),
+      phone: sanitizePhone(str(body.phone, 40)),
       role: str(body.role, 120),
-      companyName: str(body.companyName, 160),
-      companySize: str(body.companySize, 40),
-      industry: str(body.industry, 80),
-      consultantCount: str(body.consultantCount, 40),
-      interests: str(body.interests, 3000),
-      challenge: str(body.challenge, 3000),
-      timeline: str(body.timeline, 80),
-      source: str(body.source, 80),
-      sourceOther: str(body.sourceOther, 200),
     }
 
     // Server-side validation (mirrors the form).
-    const missing = (
-      [
-        'firstName',
-        'lastName',
-        'email',
-        'role',
-        'companyName',
-        'companySize',
-        'industry',
-        'consultantCount',
-        'source',
-      ] as const
-    ).filter((k) => !f[k])
+    const missing = (['firstName', 'lastName', 'email', 'role'] as const).filter((k) => !f[k])
     if (missing.length)
       return NextResponse.json({ error: `Missing fields: ${missing.join(', ')}` }, { status: 400 })
     if (!isEmail(f.email))
       return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+    if (f.phone && !isValidPhone(f.phone))
+      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
 
     if (!process.env.RESEND_API_KEY) {
       console.error('❌ RESEND_API_KEY is not set — demo request not sent')
@@ -103,41 +85,33 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY)
 
     const fullName = `${f.firstName} ${f.lastName}`.trim()
-    const source = f.sourceOther ? `${f.source} — ${f.sourceOther}` : f.source
 
     /* ─── 1. Internal email to info@verocv.se ─── */
     const row = (label: string, value: string) =>
       value
-        ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;font-size:13px;vertical-align:top;white-space:nowrap">${esc(label)}</td><td style="padding:6px 0;color:#0f172a;font-size:14px">${nl2br(value)}</td></tr>`
+        ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;font-size:13px;vertical-align:top;white-space:nowrap">${esc(label)}</td><td style="padding:6px 0;color:#0f172a;font-size:14px">${esc(value)}</td></tr>`
         : ''
-    const section = (title: string, rows: string) =>
-      `<h3 style="margin:24px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#051650">${esc(title)}</h3><table style="border-collapse:collapse;width:100%">${rows}</table>`
 
     const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#0f172a">
         <h2 style="margin:0 0 4px;color:#051650">Ny demoförfrågan</h2>
-        <p style="margin:0 0 16px;color:#475569;font-size:14px">${esc(fullName)} från <strong>${esc(f.companyName)}</strong> vill boka en demo.</p>
+        <p style="margin:0 0 16px;color:#475569;font-size:14px">${esc(fullName)} (${esc(f.role)}) vill boka en demo.</p>
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;font-size:14px">
           Kontakta ${esc(f.firstName)} för att boka in en tid (30 min).
         </div>
-        ${section('Kontaktuppgifter', row('Namn', fullName) + row('E-post', f.email) + row('Telefon', f.phone) + row('Roll', f.role))}
-        ${section('Företag', row('Företag', f.companyName) + row('Anställda', f.companySize) + row('Bransch', f.industry) + row('Antal konsulter', f.consultantCount))}
-        ${section('Frågor', row('Vill veta mer om', f.interests) + row('Största utmaning idag', f.challenge) + row('Vill komma igång', f.timeline) + row('Hörde om VeroCV via', source))}
+        <h3 style="margin:24px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#051650">Kontaktuppgifter</h3>
+        <table style="border-collapse:collapse;width:100%">
+          ${row('Namn', fullName)}${row('E-post', f.email)}${row('Telefon', f.phone)}${row('Roll', f.role)}
+        </table>
         <p style="margin-top:28px;color:#94a3b8;font-size:12px">Svara direkt på detta mejl för att kontakta ${esc(fullName)}. Formulärets språk: ${lang === 'sv' ? 'svenska' : 'engelska'}.</p>
       </div>`
 
     const text = [
-      `Ny demoförfrågan: ${fullName} (${f.companyName}) — kontakta för att boka in en tid (30 min)`,
+      `Ny demoförfrågan: ${fullName} — kontakta för att boka in en tid (30 min)`,
       ' ',
       `E-post: ${f.email}`,
       f.phone && `Telefon: ${f.phone}`,
       `Roll: ${f.role}`,
-      `Företag: ${f.companyName} · ${f.companySize} anställda · ${f.industry} · ${f.consultantCount} konsulter`,
-      ' ',
-      f.interests && `Vill veta mer om: ${f.interests}`,
-      f.challenge && `Största utmaning: ${f.challenge}`,
-      f.timeline && `Vill komma igång: ${f.timeline}`,
-      `Hörde om VeroCV via: ${source}`,
     ]
       .filter((l): l is string => typeof l === 'string' && l !== '')
       .join('\n')
@@ -146,7 +120,7 @@ export async function POST(req: NextRequest) {
       from: FROM,
       to: [TO],
       replyTo: f.email,
-      subject: `Demoförfrågan: ${f.companyName} — ${fullName}`,
+      subject: `Demoförfrågan: ${fullName} (${f.role})`,
       html,
       text,
     })

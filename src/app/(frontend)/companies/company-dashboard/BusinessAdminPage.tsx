@@ -12,12 +12,14 @@ import AdminManagerInterviews from "@/components/Dashboard/Company-dashboard/adm
 import ManagerAvailability from "@/components/Dashboard/Company-dashboard/admin/views/Manageravailability"
 import EmployeesView from "@/components/Dashboard/Company-dashboard/admin/views/EmployeesView"
 import EmployeeProfile from "@/components/Dashboard/Company-dashboard/admin/views/EmployeeProfile"
+import OrganizationChart from "@/components/Dashboard/Company-dashboard/admin/views/OrganizationChart"
 import AdminReports from "@/components/Dashboard/Company-dashboard/admin/views/Adminreports"
 // Settings → Account / Help & Support are views now (moved into admin/views).
 import BusinessAdminSettings from "@/components/Dashboard/Company-dashboard/admin/views/Businessadminsettings"
 import AdminHelpAndSupport from "@/components/Dashboard/Company-dashboard/admin/views/AdminHelpAndSupport"
 import FeatureRequest from "@/components/Dashboard/Company-dashboard/admin/views/featureRequest"
 import AdminChats from "@/components/Dashboard/Company-dashboard/chat/AdminChats"
+// Others → Chats: the same chat page managers and employees use.
 
 
 const BusinessAdminPage = (): JSX.Element => {
@@ -34,6 +36,7 @@ const BusinessAdminPage = (): JSX.Element => {
       case "availability": return <ManagerAvailability />
       case "employees": return <EmployeesView />
       case "employee_profile": return <EmployeeProfile />
+      case "organization": return <OrganizationChart />
       case "interviews": return <AdminManagerInterviews />
       case "reports": return <AdminReports />
       case "chat": return <AdminChats startWithUserId={chatWithUserId} />
