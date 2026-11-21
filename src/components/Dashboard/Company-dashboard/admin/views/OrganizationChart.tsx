@@ -369,7 +369,7 @@ export default function OrganizationChart() {
   /* ── Folding ── */
   const isOpen = (id: string) => (q ? true : !collapsed.has(id)) // searching opens everything
   const toggle = (id: string) =>
-    setCollapsed((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setCollapsed((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const expandAll = () => { setCollapsed(new Set()); setShowEmployees(true) }
   // Fold one level down: departments (or managers when there are no departments) stay visible.
   const collapseAll = () =>
@@ -500,7 +500,7 @@ export default function OrganizationChart() {
         <button
           key="__more"
           type="button"
-          onClick={() => setShowAllEmp((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })}
+          onClick={() => setShowAllEmp((s) => { const n = new Set(s); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); return n })}
           className="rounded-lg border border-dashed border-slate-300 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-blue-400 hover:text-blue-700"
         >
           {rest > 0 ? t.showMore(rest) : t.showLess}
