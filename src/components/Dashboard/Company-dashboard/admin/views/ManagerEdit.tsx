@@ -1,11 +1,14 @@
 "use client"
 
 // ══════════════════════════════════════════════════════════════════════
-// FILE LOCATION:  src/components/Dashboard/Company-dashboard/admin/views/ManagerEdit.tsx   (NEW)
+// FILE LOCATION:  src/components/Dashboard/Company-dashboard/admin/views/ManagerEdit.tsx   (REPLACE)
 // WHAT IT DOES:   Business admin → edit a manager (view "manager_edit").
-//   Name, title, login (work) email, private email, phones, department,
-//   access level, account status. Saves with PATCH /api/company/admin/managers/:id
-//   and goes back to the profile.
+//   The admin can change ONLY:
+//     • Personal details — first name, last name, job title
+//     • Work & access    — department, access level, account status
+//   Contact details (work/login email, private email, phone, mobile) are the manager's own —
+//   they change them in their settings. Saves with PATCH /api/company/admin/managers/:id
+//   (the server also ignores contact fields) and goes back to the profile.
 // ══════════════════════════════════════════════════════════════════════
 
 import { useEffect, useState } from "react"
@@ -13,10 +16,11 @@ import type React from "react"
 import { Icon } from "@iconify/react"
 import { useBusinessAdmin } from "../Businessadmincontext"
 import { useBusinessAdminTranslations } from "@/utils/Businessadmintranslations"
-import { managersApi, type ManagerEditInput, type ManagerStatus } from "@/utils/adminManagers"
+import { managersApi, type ManagerEditInput as FullEditInput, type ManagerStatus } from "@/utils/adminManagers"
 import { NAVY, STATUS_STYLE, initials, txFor } from "./managersText"
 
-const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())
+/** What the business admin may edit. */
+type ManagerEditInput = Pick<FullEditInput, "firstName" | "lastName" | "jobTitle" | "department" | "accessLevel" | "status">
 const inputCls = (err?: string) =>
   `w-full px-3.5 py-2.5 rounded-xl border text-sm text-gray-800 bg-white outline-none transition-all focus:ring-2 ${err ? "border-red-300 focus:ring-red-100" : "border-gray-200 focus:ring-blue-100 focus:border-blue-300"}`
 
@@ -61,9 +65,8 @@ export default function ManagerEdit() {
       .get(selectedManagerId)
       .then((p) => {
         const f: ManagerEditInput = {
-          firstName: p.firstName, lastName: p.lastName, email: p.email, privateEmail: p.privateEmail,
-          phone: p.phone, mobilePhone: p.mobilePhone, jobTitle: p.jobTitle, department: p.department,
-          accessLevel: p.accessLevel, status: p.status,
+          firstName: p.firstName, lastName: p.lastName, jobTitle: p.jobTitle,
+          department: p.department, accessLevel: p.accessLevel, status: p.status,
         }
         setForm(f)
         setOriginal(f)
@@ -94,16 +97,12 @@ export default function ManagerEdit() {
     setSubmitError("")
   }
   const dirty = JSON.stringify(form) !== JSON.stringify(original)
-  const emailChanged = form.email.trim().toLowerCase() !== original.email.toLowerCase()
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
     const errs: typeof errors = {}
     if (!form.firstName.trim()) errs.firstName = tx.required
     if (!form.lastName.trim()) errs.lastName = tx.required
-    if (!form.email.trim()) errs.email = tx.required
-    else if (!isEmail(form.email)) errs.email = tx.invalidEmail
-    if (form.privateEmail.trim() && !isEmail(form.privateEmail)) errs.privateEmail = tx.invalidEmail
     setErrors(errs)
     if (Object.keys(errs).length) return setSubmitError(tx.checkFields)
 
@@ -121,7 +120,7 @@ export default function ManagerEdit() {
     } catch (err: any) {
       const fe = err?.fieldErrors ?? {}
       const mapped: typeof errors = {}
-      for (const [k, v] of Object.entries(fe)) mapped[k as keyof ManagerEditInput] = v === "taken" ? tx.taken : v === "invalid" ? tx.invalidEmail : tx.required
+      for (const [k, v] of Object.entries(fe)) mapped[k as keyof ManagerEditInput] = v === "invalid" ? tx.checkFields : tx.required
       setErrors(mapped)
       setSubmitError(Object.keys(mapped).length ? tx.checkFields : tx.saveFailed)
     } finally {
@@ -154,28 +153,6 @@ export default function ManagerEdit() {
             </Field>
             <Field label={tx.jobTitle} className="sm:col-span-2">
               <input value={form.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} className={inputCls()} />
-            </Field>
-          </div>
-        </Section>
-
-        <Section title={tx.contactDetails} icon="tabler:address-book">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label={tx.workEmail} required error={errors.email} className="sm:col-span-2">
-              <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls(errors.email)} />
-              {emailChanged && !errors.email && (
-                <p className="mt-2 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                  <Icon icon="tabler:alert-triangle" className="w-4 h-4 flex-shrink-0" />{tx.loginChange}
-                </p>
-              )}
-            </Field>
-            <Field label={tx.privateEmail} error={errors.privateEmail} className="sm:col-span-2">
-              <input type="email" value={form.privateEmail} onChange={(e) => set("privateEmail", e.target.value)} className={inputCls(errors.privateEmail)} />
-            </Field>
-            <Field label={tx.phone}>
-              <input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls()} />
-            </Field>
-            <Field label={tx.mobile}>
-              <input type="tel" value={form.mobilePhone} onChange={(e) => set("mobilePhone", e.target.value)} className={inputCls()} />
             </Field>
           </div>
         </Section>

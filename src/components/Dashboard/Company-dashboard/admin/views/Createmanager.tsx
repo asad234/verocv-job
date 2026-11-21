@@ -8,6 +8,7 @@
 //                       with the work email, password and a log-in button.
 //   Password can be generated, copied and checked against simple rules.
 //   A live preview shows exactly what the manager will receive.
+//   Phone: digits only (one "+" first is allowed) — letters can't be typed or pasted.
 // ══════════════════════════════════════════════════════════════════════
 
 import { useMemo, useState } from "react"
@@ -15,6 +16,8 @@ import type React from "react"
 import { Icon } from "@iconify/react"
 import { useBusinessAdminTranslations } from "@/utils/Businessadmintranslations"
 import { useBusinessAdmin } from "@/components/Dashboard/Company-dashboard/admin/Businessadmincontext"
+import PhoneInput from "@/components/shared/PhoneInput"
+import { isValidPhone } from "@/utils/phone"
 
 const NAVY = "rgb(5,22,80)"
 type Lang = "sv" | "en"
@@ -65,6 +68,7 @@ const TX = {
     taken: "There's already an account with this email",
     sameEmail: "Use a different email than the work email — or turn the email off",
     pwShort: "At least 8 characters with letters and numbers",
+    invalidPhone: "Enter a valid phone number (6–15 digits, may start with +)",
     pwMismatch: "The passwords don't match",
     checkFields: "Please check the highlighted fields.",
     failed: "Couldn't create the manager. Please try again.",
@@ -141,6 +145,7 @@ const TX = {
     taken: "Det finns redan ett konto med den här e-postadressen",
     sameEmail: "Använd en annan adress än jobbmejlen — eller stäng av mejlet",
     pwShort: "Minst 8 tecken med bokstäver och siffror",
+    invalidPhone: "Ange ett giltigt telefonnummer (6–15 siffror, får börja med +)",
     pwMismatch: "Lösenorden matchar inte",
     checkFields: "Kontrollera de markerade fälten.",
     failed: "Kunde inte skapa chefen. Försök igen.",
@@ -304,6 +309,7 @@ export default function CreateManager() {
     if (!form.lastName.trim()) e.lastName = tx.required
     if (!form.workEmail.trim()) e.workEmail = tx.required
     else if (!isEmail(form.workEmail)) e.workEmail = tx.invalidEmail
+    if (!isValidPhone(form.phone)) e.phone = tx.invalidPhone
     if (!form.department.trim()) e.department = tx.required
     if (!rules[0]!.ok || !rules[1]!.ok) e.password = tx.pwShort
     if (!form.confirmPassword) e.confirmPassword = tx.required
@@ -352,7 +358,9 @@ export default function CreateManager() {
         const mapped: Errors = {}
         for (const [k, v] of Object.entries(fe)) {
           mapped[k as keyof Form] =
-            v === "taken" ? tx.taken : v === "invalid" ? tx.invalidEmail : v === "weak" ? tx.pwShort : tx.required
+            v === "taken" ? tx.taken
+              : v === "invalid" ? (k === "phone" ? tx.invalidPhone : tx.invalidEmail)
+                : v === "weak" ? tx.pwShort : tx.required
         }
         setErrors(mapped)
         setSubmitError(Object.keys(mapped).length ? tx.checkFields : data?.message || tx.failed)
@@ -490,8 +498,9 @@ export default function CreateManager() {
               <Field label={tx.jobTitle}>
                 <input value={form.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} placeholder={tx.jobTitlePh} className={inputCls()} />
               </Field>
-              <Field label={tx.phone}>
-                <input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+46 70 000 00 00" className={inputCls()} />
+              <Field label={tx.phone} error={errors.phone}>
+                <PhoneInput value={form.phone} onChange={(v) => set("phone", v)} placeholder="+46701234567"
+                  autoComplete="off" aria-invalid={!!errors.phone} className={inputCls(errors.phone)} />
               </Field>
             </div>
           </Section>

@@ -1,3 +1,5 @@
+// FILE LOCATION:  src/utils/Businessadmintranslations.ts   (REPLACE)
+// CHANGE: "Skapa chef" → "Skapa Chefkonto", "Hantera chefer" → "Hantera Chefkonton" (+ English: "Create Manager Account", "Manage Manager Accounts")
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -13,8 +15,8 @@ export const businessAdminTranslations = {
     profile: 'Profile',
     dashboard: 'Dashboard',
     managers: 'Managers',
-    createManager: 'Create Manager',
-    managersList: 'Manage Managers',
+    createManager: 'Create Manager Account',
+    managersList: 'Manage Manager Accounts',
     employees: 'Employees',
     availability: 'Manager Availability',
     messages: 'Messages',
@@ -36,7 +38,7 @@ export const businessAdminTranslations = {
     setupTitle: 'Admin Actions',
     step1Title: 'Create a Manager Account',
     step1Desc: 'Add a new manager and send them an invitation link.',
-    step2Title: 'Manage Managers',
+    step2Title: 'Manage Manager Accounts',
     step2Desc: 'View, edit, deactivate or remove manager accounts.',
     step3Title: 'Manager Availability',
     step3Desc: 'See when managers are free and plan assignments.',
@@ -65,7 +67,7 @@ export const businessAdminTranslations = {
     createAnother: 'Create another',
 
     /* ── Managers list ── */
-    managersListTitle: 'Manage Managers',
+    managersListTitle: 'Manage Manager Accounts',
     managersListDesc: 'View, edit and manage all manager accounts in your organisation.',
     searchManagers: 'Search managers…',
     allStatuses: 'All statuses',
@@ -305,8 +307,8 @@ export const businessAdminTranslations = {
     profile: 'Profil',
     dashboard: 'Dashboard',
     managers: 'Chefer',
-    createManager: 'Skapa chef',
-    managersList: 'Hantera chefer',
+    createManager: 'Skapa Chefkonto',
+    managersList: 'Hantera Chefkonton',
     employees: 'Medarbetare',
     availability: 'Chefernas tillgänglighet',
     messages: 'Meddelanden',
@@ -324,9 +326,9 @@ export const businessAdminTranslations = {
     welcomeTitle: 'Företagsadmin-dashboard',
     welcomeSubtitle: 'Hantera dina chefer, följ tillgänglighet och kommunicera med ditt team.',
     setupTitle: 'Adminåtgärder',
-    step1Title: 'Skapa chefskonto',
+    step1Title: 'Skapa Chefkonto',
     step1Desc: 'Lägg till en ny chef och skicka en inbjudan.',
-    step2Title: 'Hantera chefer',
+    step2Title: 'Hantera Chefkonton',
     step2Desc: 'Visa, redigera, inaktivera eller ta bort chefskonton.',
     step3Title: 'Chefernas tillgänglighet',
     step3Desc: 'Se när chefer är lediga och planera uppdrag.',
@@ -335,7 +337,7 @@ export const businessAdminTranslations = {
     completionMessage: 'Använd sidopanelen eller klicka på en åtgärd ovan för att navigera.',
     orgTitle: 'Organisationsöversikt',
 
-    createManagerTitle: 'Skapa chefskonto',
+    createManagerTitle: 'Skapa Chefkonto',
     createManagerDesc: 'Lägg till en ny chef som kan hantera medarbetare och CV-skapande.',
     firstNameLabel: 'Förnamn',
     lastNameLabel: 'Efternamn',
@@ -348,12 +350,12 @@ export const businessAdminTranslations = {
     sendInviteToggle: 'Skicka inbjudan via e-post',
     noteLabel: 'Anteckning (valfritt)',
     notePlaceholder: 'Intern notering om denna chef…',
-    submitCreateManager: 'Skapa chefskonto',
+    submitCreateManager: 'Skapa Chefkonto',
     successTitle: 'Chefskonto skapat!',
     successDesc: 'En inbjudan har skickats till den angivna e-postadressen.',
     createAnother: 'Skapa ett till',
 
-    managersListTitle: 'Hantera chefer',
+    managersListTitle: 'Hantera Chefkonton',
     managersListDesc: 'Visa, redigera och hantera alla chefskonton i din organisation.',
     searchManagers: 'Sök chefer…',
     allStatuses: 'Alla statusar',
